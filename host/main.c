@@ -54,6 +54,7 @@ int main(void)
 	 * called.
 	 */
 	printf("Invoking TA to increment %d\n", op.params[0].value.a);
+	
 	res = TEEC_InvokeCommand(&sess, MY_TA_CMD_INC_VALUE, &op, &err_origin);
 	
 	if (res != TEEC_SUCCESS)

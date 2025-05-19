@@ -121,11 +121,19 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 {
 	(void)&sess_ctx; /* Unused parameter */
 
+	// We could have a command ID for each type of vulneravility.
+
 	switch (cmd_id) {
 	case MY_TA_CMD_INC_VALUE:
 		return inc_value(param_types, params);
 	case MY_TA_CMD_DEC_VALUE:
 		return dec_value(param_types, params);
+	case CMD_SECRET_MANAGMENT:
+		return 0;
+	case CMD_LIGHT_CRYPTOGRAPHIC:
+		return 0;
+	case CMD_INPUT_VALIDATION:
+		return 0;
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

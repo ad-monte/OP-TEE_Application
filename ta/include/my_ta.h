@@ -41,6 +41,11 @@
 				
 
 /* The function IDs implemented in this TA */
+// Project CMD
+#define CMD_SECRET_MANAGMENT
+#define CMD_LIGHT_CRYPTOGRAPHIC
+#define CMD_INPUT_VALIDATION 
+// hello world CMD
 #define MY_TA_CMD_INC_VALUE		0
 #define MY_TA_CMD_DEC_VALUE		1
 
