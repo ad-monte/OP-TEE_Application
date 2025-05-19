@@ -1,0 +1,19 @@
+#ifndef MY_TA_H
+#define MY_TA_H
+
+// TA UUID (must match the one in ta/Makefile)
+#define TA_MY_TA_UUID \
+    { 0x12345678, 0x8765, 0x4321, \
+      { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0 } }
+
+// Command IDs
+#define TA_MY_TA_CMD_ADD     0
+#define TA_MY_TA_CMD_ENCRYPT 1
+
+
+// check this commands.
+#define TA_CMD_STORE_SECRET     0  // Insecure storage
+#define TA_CMD_GET_SECRET       1  // Leaky retrieval
+#define TA_CMD_COUNT_ACCESS     2  // State desync
+
+#endif /* MY_TA_H */
