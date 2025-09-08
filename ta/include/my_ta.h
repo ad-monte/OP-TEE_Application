@@ -28,6 +28,7 @@
 #define MY_TA_H
 
 
+
 /*
  * This UUID is generated with uuidgen
  * the ITU-T UUID generator at http://www.itu.int/ITU-T/asn1/uuid.html
@@ -36,8 +37,6 @@
 	{ 0x16f9d3f4, 0x398d, 0x4394, \
 		{ 0x93, 0x71, 0x91, 0x3b, 0xf5, 0x56, 0x92, 0xb9} }
 
-// 	{ 0x16f9d3f4, 0x398d, 0x4394, \
-	//	{ 0x91, 0x3b, 0xf5, 0x56, 0x92, 0x9b} }
 				
 
 /* The function IDs implemented in this TA */
@@ -45,8 +44,13 @@
 #define CMD_SECRET_MANAGMENT
 #define CMD_LIGHT_CRYPTOGRAPHIC
 #define CMD_INPUT_VALIDATION 
+
+
 // hello world CMD
-#define MY_TA_CMD_INC_VALUE		0
-#define MY_TA_CMD_DEC_VALUE		1
+#define MY_TA_CMD_INC_VALUE		8
+#define MY_TA_CMD_DEC_VALUE		9
+
+
+
 
 #endif /*TA_HELLO_WORLD_H*/
