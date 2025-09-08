@@ -12,7 +12,7 @@ CFLAGS += -Wall -I../ta/include -I$(TEEC_EXPORT)/include -I./include
 #Add/link other required libraries here
 LDADD += -lteec -L$(TEEC_EXPORT)/lib
 
-BINARY = my_ta
+BINARY = my_ta	#name of the  program to call
 
 .PHONY: all
 all: $(BINARY)
