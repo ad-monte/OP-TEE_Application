@@ -1,0 +1,16 @@
+This is a sample plaintext message to be encrypted using OP-TEE. 
+The purpose of this text is to test secure storage, cryptographic operations, 
+and data confidentiality within the Trusted Execution Environment (TEE). 
+
+Sample sensitive data:
+- User ID: 5XJ9-7B2Q-3P8M
+- Session Key: 0xDEADBEEFCAFE1234
+- Timestamp: 2025-08-05T14:30:00Z
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam in dui mauris. 
+Vivamus vehicula aliquet libero, sit amet facilisis magna ultricies nec. 
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+
+-----BEGIN TEST DATA-----
+AQIDBAUGBwgJAAECAwQFBgcICQABAgMEBQYHCAkAAQIDBAUGBwgJAAECAwQFBgcICQAB
+-----END TEST DATA-----
