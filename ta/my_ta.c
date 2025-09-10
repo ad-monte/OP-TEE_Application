@@ -1,7 +1,10 @@
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
+#include <string.h>  // For memcpy()
 #include <my_ta.h>
 
+
+/*-------------secret managment variables--------------------*/ 
 
 // VULN 1: Global shared state
 static uint8_t g_secret[256];
@@ -9,6 +12,8 @@ static size_t g_secret_size = 0;
 
 // VULN 2: Unsynchronized counter
 static uint32_t g_access_count = 0;  
+
+/*-------------end secret managment variables -------------------*/ 
 
 TEE_Result TA_CreateEntryPoint(void)
 {
@@ -110,6 +115,34 @@ static TEE_Result dec_value(uint32_t param_types,
 
 	return TEE_SUCCESS;
 }
+
+
+static TEE_Result unsecure_secret(uint32_t param_types,
+	TEE_Param params[4],uint32_t cmd_id) {
+
+		switch (cmd_id){
+			case CMD_SECRET_MANAGMENT_STR:
+			TEE_MemMove(g_secret, params[0].memref.buffer, params[0].memref.size);
+				 g_secret_size = params[0].memref.size;
+			break;
+			case CMD_SECRET_MANAGMENT_GET:
+			TEE_MemMove(params[0].memref.buffer, g_secret, g_secret_size);
+				params[0].memref.size = g_secret_size;
+				g_access_count++;  // VULN 5: Not atomic	
+			break;
+			case CMD_SECRET_MANAGMENT_ACC:
+				// VULN 6: Returns sensitive info
+				params[0].value.a = g_access_count;
+			break;
+		}
+
+		// Danger: No bounds check!		
+		memcpy(g_secret, params[0].memref.buffer, params[0].memref.size);
+	 		   g_secret_size = params[0].memref.size;
+
+		return TEE_SUCCESS;
+	}
+
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
  * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
@@ -128,12 +161,16 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return inc_value(param_types, params);
 	case MY_TA_CMD_DEC_VALUE:
 		return dec_value(param_types, params);
-	case CMD_SECRET_MANAGMENT:
-		return 0;
+	case CMD_SECRET_MANAGMENT_STR:
+		return unsecure_secret(param_types, params, cmd_id);
+	case CMD_SECRET_MANAGMENT_GET:
+		return unsecure_secret(param_types, params, cmd_id);
+	case CMD_SECRET_MANAGMENT_ACC:
+		return unsecure_secret(param_types, params, cmd_id);
 	case CMD_LIGHT_CRYPTOGRAPHIC:
-		return 0;
+		return TEE_SUCCESS;
 	case CMD_INPUT_VALIDATION:
-		return 0;
+		return TEE_SUCCESS;
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

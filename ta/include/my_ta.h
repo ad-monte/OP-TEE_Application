@@ -41,12 +41,18 @@
 				
 
 /* The function IDs implemented in this TA */
-// Project CMD
-#define CMD_SECRET_MANAGMENT
-#define CMD_LIGHT_CRYPTOGRAPHIC
-#define CMD_INPUT_VALIDATION 
+// check this commands.
+
+#define CMD_SECRET_MANAGMENT_STR   10  // Insecure storage
+#define CMD_SECRET_MANAGMENT_GET   11  // Insecure storage
+#define CMD_SECRET_MANAGMENT_ACC   12  // Insecure storage
+
+#define CMD_LIGHT_CRYPTOGRAPHIC 3
+#define CMD_INPUT_VALIDATION 4
 // hello world CMD
-#define MY_TA_CMD_INC_VALUE		0
-#define MY_TA_CMD_DEC_VALUE		1
+#define MY_TA_CMD_INC_VALUE       1  // Leaky retrieval
+#define MY_TA_CMD_DEC_VALUE   	  2  // State desync
+// Project CMD
+
 
 #endif /*TA_HELLO_WORLD_H*/
