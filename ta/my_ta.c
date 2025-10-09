@@ -7,18 +7,19 @@
 /*-------------secret managment variables--------------------*/ 
 
 // VULN 1: Global shared state
-static uint8_t g_secret[256];
-static size_t g_secret_size = 0;
+static uint8_t g_secret[32];
+static uint32_t g_secret_size;
+static bool g_initialized = false;
 
-// VULN 2: Unsynchronized counter
-static uint32_t g_access_count = 0;  
+// VULN 2: Global pointer to secret data
+static uint8_t *g_secret_buffer = NULL;
+static uint32_t g_secret_size = 0;
 
 /*-------------end secret managment variables -------------------*/ 
 
 TEE_Result TA_CreateEntryPoint(void)
 {
 	DMSG("has been called");
-
 	return TEE_SUCCESS;
 }
 /*
@@ -53,14 +54,8 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 	/* Unused parameters */
 	(void)&params;
 	(void)&sess_ctx;
-
-	/*
-	 * The DMSG() macro is non-standard, TEE Internal API doesn't
-	 * specify any means to logging from a TA.
-	 */
+	// The DMSG() macro is non-standard, TEE Internal API doesn't specify any means to logging from a TA.
 	IMSG("Hello World Ragazzo!\n");
-	IMSG("Value exp_param_types %d }",exp_param_types);
-
 	/* If return value != TEE_SUCCESS the session will not be created. */
 	return TEE_SUCCESS;
 }
@@ -76,72 +71,86 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 	IMSG("Goodbye!\n");
 }
 
-static TEE_Result inc_value(uint32_t param_types,
-	TEE_Param params[4])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
-
-	DMSG("has been called");
-
-	if (param_types != exp_param_types)
-		return TEE_ERROR_BAD_PARAMETERS;
-
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a++;
-	IMSG("Increase value to: %u", params[0].value.a);
-
-	return TEE_SUCCESS;
-}
-
-static TEE_Result dec_value(uint32_t param_types,
-	TEE_Param params[4])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
-
-	DMSG("has been called");
-
-	if (param_types != exp_param_types)
-		return TEE_ERROR_BAD_PARAMETERS;
-
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a--;
-	IMSG("Decrease value to: %u", params[0].value.a);
-
-	return TEE_SUCCESS;
-}
-
-
-static TEE_Result unsecure_secret(uint32_t param_types,
+static TEE_Result store_secret(uint32_t param_types,
 	TEE_Param params[4],uint32_t cmd_id) {
 
-		switch (cmd_id){
-			case CMD_SECRET_MANAGMENT_STR:
-			TEE_MemMove(g_secret, params[0].memref.buffer, params[0].memref.size);
-				 g_secret_size = params[0].memref.size;
-			break;
-			case CMD_SECRET_MANAGMENT_GET:
-			TEE_MemMove(params[0].memref.buffer, g_secret, g_secret_size);
-				params[0].memref.size = g_secret_size;
-				g_access_count++;  // VULN 5: Not atomic	
-			break;
-			case CMD_SECRET_MANAGMENT_ACC:
-				// VULN 6: Returns sensitive info
-				params[0].value.a = g_access_count;
-			break;
-		}
+		IMSG("unsecure storing");
+		
+		uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+							   TEE_PARAM_TYPE_VALUE_INPUT,
+							   TEE_PARAM_TYPE_NONE,
+							   TEE_PARAM_TYPE_NONE);
+		
+		if (param_types != exp_param_types)
+			return TEE_ERROR_BAD_PARAMETERS;
+		//vulnerability: unchecked parameter bounds
+		uint8_t *secret      = params[0].memref.buffer;
+		uint32_t secret_size = params[0].memref.size;
+		uint32_t access_id   = params[1].value.a;
+		// vulnerability: possible overflow
+		memcpy(g_secret, secret, secret_size);
 
-		// Danger: No bounds check!		
-		memcpy(g_secret, params[0].memref.buffer, params[0].memref.size);
-	 		   g_secret_size = params[0].memref.size;
-
+		IMSG("g_secret_size: %d", g_secret_size);
 		return TEE_SUCCESS;
 	}
+
+
+	static TEE_Result retrieve_secret(uint32_t param_types,
+		TEE_Param params[4],uint32_t cmd_id) {
+	
+			IMSG("unsecure storing");
+			
+			uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
+								   TEE_PARAM_TYPE_VALUE_INPUT,
+								   TEE_PARAM_TYPE_NONE,
+								   TEE_PARAM_TYPE_NONE);
+			
+			if (param_types != exp_param_types)
+				return TEE_ERROR_BAD_PARAMETERS;
+		
+
+			uint8_t *out_buffer = params[0].memref.buffer;
+			uint32_t out_buffer_size = params[0].memref.size;
+			uint32_t access_id = params[1].value.a;
+	
+			memcpy( out_buffer , g_secret , out_buffer_size);
+	
+	
+			IMSG("g_secret_size: %d", g_secret_size);
+			return TEE_SUCCESS;
+		}
+	
+TEE_Result TA_ALLOCATE_SECRET(uint32_t param_types, TEE_Param params[4]) {
+	// vulneravility: missing param type check
+	uint8_t *secret_data = params[0].memref.buffer;
+	uint32_t size = params[0].memref.size;
+
+
+	// Free previous secret if exists
+	if (g_secret_buffer) {
+		TEE_Free(g_secret_buffer);
+		//delay 1 s to increase the attack window
+		TEE_Time t1, t2;
+		TEE_GetSystemTime(&t1);	
+		do {
+			TEE_GetSystemTime(&t2);
+		} while ((t2.seconds - t1.seconds) < 1);		
+
+		// VULN: g_secret_buffer now dangles - points to freed memory
+		g_secret_buffer = NULL;
+	}
+	
+	// Allocate new memory for secret
+	g_secret_buffer = TEE_Malloc(size, 0);
+	if (!g_secret_buffer) {
+		return TEE_ERROR_OUT_OF_MEMORY;
+	}
+	
+	memcpy(g_secret_buffer, secret_data, size);
+	g_secret_size = size;
+	
+	return TEE_SUCCESS;
+}
 
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
@@ -157,20 +166,12 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 	// We could have a command ID for each type of vulneravility.
 
 	switch (cmd_id) {
-	case MY_TA_CMD_INC_VALUE:
-		return inc_value(param_types, params);
-	case MY_TA_CMD_DEC_VALUE:
-		return dec_value(param_types, params);
 	case CMD_SECRET_MANAGMENT_STR:
-		return unsecure_secret(param_types, params, cmd_id);
+		return store_secret(param_types, params, cmd_id);
 	case CMD_SECRET_MANAGMENT_GET:
-		return unsecure_secret(param_types, params, cmd_id);
-	case CMD_SECRET_MANAGMENT_ACC:
-		return unsecure_secret(param_types, params, cmd_id);
-	case CMD_LIGHT_CRYPTOGRAPHIC:
-		return TEE_SUCCESS;
-	case CMD_INPUT_VALIDATION:
-		return TEE_SUCCESS;
+		return retrieve_secret(param_types, params, cmd_id);
+	case CMD_SECRET_ALLOCATE:
+		return TA_ALLOCATE_SECRET(param_types, params);
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
