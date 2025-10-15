@@ -140,11 +140,11 @@ int main(int argc, char *argv[])
 	prepare_aes(&ctx, ENCODE);
 
 	printf("Load key in TA\n");
-	memset(key, 0xa5, sizeof(key)); /* Load some dummy value */
+	memset(key, 0xa5, sizeof(key)); /* Load some dummy value  for the KEY*/
 	set_key(&ctx, key, AES_TEST_KEY_SIZE);
 
 	printf("Reset ciphering operation in TA (provides the initial vector)\n");
-	memset(iv, 0, sizeof(iv)); /* Load some dummy value */
+	memset(iv, 0, sizeof(iv)); /* Load some dummy value as initial vector*/
 	set_iv(&ctx, iv, AES_BLOCK_SIZE);
 
 	printf("Encode buffer from TA\n");
