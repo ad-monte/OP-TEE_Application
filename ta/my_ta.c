@@ -1,14 +1,19 @@
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
 #include <my_ta.h>
+#include <string.h>  // For memcpy()
+
+
 
 
 // VULN 1: Global shared state
-static uint8_t g_secret[256];
-static size_t g_secret_size = 0;
+static uint8_t g_secret[32];
+static uint32_t g_secret_size;
+static bool g_initialized = false;
 
-// VULN 2: Unsynchronized counter
-static uint32_t g_access_count = 0;  
+// VULN 2: Global pointer to secret data
+static uint8_t *g_secret_buffer = NULL;
+static uint32_t g_secret_size = 0;
 
 TEE_Result TA_CreateEntryPoint(void)
 {
@@ -71,45 +76,60 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 	IMSG("Goodbye!\n");
 }
 
-static TEE_Result inc_value(uint32_t param_types,
-	TEE_Param params[4])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
 
-	DMSG("has been called");
+static TEE_Result store_secret(uint32_t param_types,
+	TEE_Param params[4],uint32_t cmd_id) {
 
-	if (param_types != exp_param_types)
-		return TEE_ERROR_BAD_PARAMETERS;
+		IMSG("unsecure storing");
+		
+		uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+							   TEE_PARAM_TYPE_VALUE_INPUT,
+							   TEE_PARAM_TYPE_NONE,
+							   TEE_PARAM_TYPE_NONE);
+		
+		if (param_types != exp_param_types)
+			return TEE_ERROR_BAD_PARAMETERS;
+		//vulnerability: unchecked parameter bounds
+		uint8_t *secret      = params[0].memref.buffer;
+		uint32_t secret_size = params[0].memref.size;
+		uint32_t access_id   = params[1].value.a;
+		// vulnerability: possible overflow
+		memcpy(g_secret, secret, secret_size);
+		
+		g_secret_buffer = secret;	
+		g_secret_size = secret_size;
+		
+		IMSG("g_secret_size: %d", g_secret_size);
+		return TEE_SUCCESS;
+	}
 
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a++;
-	IMSG("Increase value to: %u", params[0].value.a);
 
-	return TEE_SUCCESS;
-}
+	static TEE_Result retrieve_secret(uint32_t param_types,
+		TEE_Param params[4],uint32_t cmd_id) {
+	
+			IMSG("unsecure storing");
+			
+			uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
+								   TEE_PARAM_TYPE_VALUE_INPUT,
+								   TEE_PARAM_TYPE_NONE,
+								   TEE_PARAM_TYPE_NONE);
+			
+			if (param_types != exp_param_types)
+				return TEE_ERROR_BAD_PARAMETERS;
+		
 
-static TEE_Result dec_value(uint32_t param_types,
-	TEE_Param params[4])
-{
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INOUT,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
+			uint8_t *out_buffer = params[0].memref.buffer;
+			uint32_t out_buffer_size = params[0].memref.size;
+			uint32_t access_id = params[1].value.a;
+	
+			memcpy( out_buffer , g_secret , out_buffer_size);
+	
+	
+			IMSG("g_secret_size: %d", g_secret_size);
+			return TEE_SUCCESS;
+		}
 
-	DMSG("has been called");
 
-	if (param_types != exp_param_types)
-		return TEE_ERROR_BAD_PARAMETERS;
-
-	IMSG("Got value: %u from NW", params[0].value.a);
-	params[0].value.a--;
-	IMSG("Decrease value to: %u", params[0].value.a);
-
-	return TEE_SUCCESS;
-}
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
  * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
@@ -124,16 +144,11 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 	// We could have a command ID for each type of vulneravility.
 
 	switch (cmd_id) {
-	case MY_TA_CMD_INC_VALUE:
-		return inc_value(param_types, params);
-	case MY_TA_CMD_DEC_VALUE:
-		return dec_value(param_types, params);
-	case CMD_SECRET_MANAGMENT:
-		return 0;
-	case CMD_LIGHT_CRYPTOGRAPHIC:
-		return 0;
-	case CMD_INPUT_VALIDATION:
-		return 0;
+	case CMD_SECRET_MANAGMENT_STR:
+		return store_secret(param_types, params, cmd_id);
+	case CMD_SECRET_MANAGMENT_GET:
+		return retrieve_secret(param_types, params, cmd_id);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
