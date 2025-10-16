@@ -7,6 +7,7 @@
 /*-------------secret managment variables--------------------*/ 
 
 // VULN 1: Global shared state
+TEE_ObjectHandle object;
 static uint8_t g_secret[32];
 static uint32_t g_secret_size;
 static bool g_initialized = false;
@@ -20,7 +21,22 @@ static uint32_t g_secret_size = 0;
 TEE_Result TA_CreateEntryPoint(void)
 {
 	DMSG("has been called");
-	return TEE_SUCCESS;
+	//TEE_ObjectHandle object;
+    uint32_t read_bytes = 0;
+    
+    TEE_Result res = TEE_OpenPersistentObject(
+        TEE_STORAGE_PRIVATE,
+        "secret",
+        sizeof("secret"),
+        TEE_DATA_FLAG_ACCESS_READ,
+        &object);
+        
+    if (res == TEE_SUCCESS) {
+        TEE_ReadObjectData(object, g_secret, sizeof(g_secret), &read_bytes);
+        TEE_CloseObject(object);
+    }
+    
+    return TEE_SUCCESS;
 }
 /*
  * Called when the instance of the TA is destroyed if the TA has not
@@ -28,9 +44,21 @@ TEE_Result TA_CreateEntryPoint(void)
  */
 void TA_DestroyEntryPoint(void)
 {
-	DMSG("has been called");
+	//TEE_ObjectHandle object;
+    
+    TEE_CreatePersistentObject(
+        TEE_STORAGE_PRIVATE,
+        "secret",
+        sizeof("secret"),
+        TEE_DATA_FLAG_ACCESS_WRITE,
+        TEE_HANDLE_NULL,
+        NULL,
+        0,
+        &object);
+        
+    TEE_WriteObjectData(object, g_secret, sizeof(g_secret));
+    TEE_CloseObject(object);
 }
-
 /*
  * Called when a new session is opened to the TA. *sess_ctx can be updated
  * with a value to be able to identify this session in subsequent calls to the
@@ -89,7 +117,10 @@ static TEE_Result store_secret(uint32_t param_types,
 		uint32_t access_id   = params[1].value.a;
 		// vulnerability: possible overflow
 		memcpy(g_secret, secret, secret_size);
-
+		
+		g_secret_buffer = secret;	
+		g_secret_size = secret_size;
+		
 		IMSG("g_secret_size: %d", g_secret_size);
 		return TEE_SUCCESS;
 	}
@@ -125,6 +156,16 @@ TEE_Result TA_ALLOCATE_SECRET(uint32_t param_types, TEE_Param params[4]) {
 	uint8_t *secret_data = params[0].memref.buffer;
 	uint32_t size = params[0].memref.size;
 
+	// print old data in the dangling pointer
+	if (g_secret_buffer) {
+		IMSG("Old secret data in dangling pointer:");
+		for (uint32_t i = 0; i < g_secret_size; i++) {
+			IMSG("%c", g_secret_buffer[i]);
+		}
+		IMSG("\n");
+	} else {
+		IMSG("No old secret data (g_secret_buffer is NULL)\n");
+	}
 
 	// Free previous secret if exists
 	if (g_secret_buffer) {
@@ -148,6 +189,12 @@ TEE_Result TA_ALLOCATE_SECRET(uint32_t param_types, TEE_Param params[4]) {
 	
 	memcpy(g_secret_buffer, secret_data, size);
 	g_secret_size = size;
+
+	// print new secret allocated
+	IMSG("New secret allocated:");
+	for (uint32_t i = 0; i < g_secret_size; i++) {
+		IMSG("%c", g_secret_buffer[i]);
+	}
 	
 	return TEE_SUCCESS;
 }

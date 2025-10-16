@@ -5,202 +5,176 @@
 #include <tee_client_api.h>
 #include <my_ta.h> 
 
+
+struct test_ctx {
+	TEEC_Context ctx;
+	TEEC_Session sess;
+};
+
+void prepare_tee_session(struct test_ctx *ctx){
+
+	TEEC_Result res;
+	TEEC_UUID uuid = MY_TA_UUID;
+	uint32_t err_origin;
+
+	res = TEEC_InitializeContext(NULL, &ctx->ctx);
+	if (res != TEEC_SUCCESS)
+		errx(1, "TEEC_InitializeContext failed with code 0x%x", res);
+	res = TEEC_OpenSession(&ctx->ctx, &ctx->sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+	if (res != TEEC_SUCCESS)
+		errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",res, err_origin);
+
+}
+void terminate_tee_session(struct test_ctx *ctx){
+	TEEC_CloseSession(&ctx->sess);
+	TEEC_FinalizeContext(&ctx->ctx);
+}
+
+void get_secret(uint8_t* secret_get, uint32_t size,  struct test_ctx *ctx_sess){
+
+	TEEC_Operation op;
+	TEEC_Result res;
+	uint32_t err_origin;
+
+	memset(secret_get, 0,size);
+	memset(&op, 0, sizeof(op));
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	op.params[0].tmpref.buffer = secret_get;
+	op.params[0].tmpref.size = size;
+	op.params[1].value.a = 1;
+
+	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_MANAGMENT_GET, &op, &err_origin);
+
+}
+
+void store_secret(uint8_t* secret, uint32_t size, struct test_ctx *ctx_sess){
+
+	TEEC_Operation op;
+	TEEC_Result res;
+	uint32_t err_origin;
+
+	memset(&op, 0, size);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	op.params[0].tmpref.buffer = secret;	
+	op.params[0].tmpref.size = size;
+	op.params[1].value.a = 1;
+
+	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_MANAGMENT_STR, &op, &err_origin);
+}
+
+void allocate_secret(uint8_t* secret, uint32_t size, struct test_ctx *ctx_sess){
+
+	TEEC_Operation op;
+	TEEC_Result res;
+	uint32_t err_origin;
+
+	memset(&op, 0, size);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	op.params[0].tmpref.buffer = secret;	
+	op.params[0].tmpref.size = size;
+
+	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_ALLOCATE, &op, &err_origin);
+}
+
+void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
+	printf("%s",msg);
+	for(int i=0; i < size; i++){
+		printf("%c",buffer[i]);
+	}
+	printf("\n");
+}
+
 int main(void)
 {
+	TEEC_UUID uuid = MY_TA_UUID;
+	uint32_t err_origin;
+
 	TEEC_Result res;
 	TEEC_Context ctx;
 	TEEC_Session sess;
 	TEEC_Operation op;
-	TEEC_UUID uuid = MY_TA_UUID;
-	uint32_t err_origin;
-
-	TEEC_Context ctx2;
-	TEEC_Session sess2;
-	TEEC_Operation op2;
-
-	/* Initialize a context 1 connecting us to the TEE */
-	res = TEEC_InitializeContext(NULL, &ctx);
-	if (res != TEEC_SUCCESS)
-		errx(1, "TEEC_InitializeContext failed with code 0x%x", res);
-
-	// Open a session 1 to the "hello world" TA, the TA will print "hello
-	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
-	if (res != TEEC_SUCCESS)
-		errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",res, err_origin);
 
 
-	/* Initialize a context 2 connecting us to the TEE */
-	res = TEEC_InitializeContext(NULL, &ctx2);
-	if (res != TEEC_SUCCESS)
-		errx(1, "TEEC_InitializeContext failed with code 0x%x", res);
+	struct test_ctx ctx_sess1;
+	
+	ctx_sess1.ctx = ctx;
+	ctx_sess1.sess = sess;
+
+	prepare_tee_session(&ctx_sess1);
 
 	// Test 0: Retrieve secret uninitialized (information disclosure)
-	uint8_t secret_get[32] = {0};
-	memset(secret_get, 0,sizeof(secret_get));
+	uint8_t secret_get[64] = {0};
+	memset(secret_get, 0,sizeof(secret_get)); 
 
-	memset(&op, 0, sizeof(op));
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
+	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
 
-	op.params[0].tmpref.buffer = secret_get;
-	op.params[0].tmpref.size = sizeof(secret_get);
-	op.params[1].value.a = 1;
-
-
-	res = TEEC_InvokeCommand(&sess, CMD_SECRET_MANAGMENT_GET, &op, &err_origin);
-
-	printf("Secret uninitizalized: ");
-	for (int i=0; i < sizeof(secret_get); i++){
-		printf("%c", secret_get[i]);
-	}
-	printf("\n");
-
+	print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
 
 	// Test1 : store secret
-	/* Clear the TEEC_Operation struct */
-	memset(&op, 0, sizeof(op));
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
-
 	uint8_t secret[32] = {0};  
 	memset(secret, 'B', sizeof(secret));
+	
+	print_buffer(secret, sizeof(secret), "Store secret: ");
 
-	printf(" store secret: ");
-	for(int i=0; i < sizeof(secret); i++){	printf("%c",secret[i]);}
-	printf("\n");
-	// uint_8_t secret[64] = "This is a very secret key that must be protected!";
-	op.params[0].tmpref.buffer = secret;	
-	op.params[0].tmpref.size = sizeof(secret);
-	op.params[1].value.a = 1;
-
-	res = TEEC_InvokeCommand(&sess, CMD_SECRET_MANAGMENT_STR, &op, &err_origin);
-	//printf("Store secret result: 0x%x\n", res);
+	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
 
 	// Test 2: Retrieve secret (information disclosure)
 	//uint8_t secret_get[128] = {0};
+
 	memset(secret_get, 0,sizeof(secret_get));
 
-	memset(&op, 0, sizeof(op));
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
+	get_secret(secret_get, sizeof(secret_get), &ctx_sess1);  // Get secret using sess 1
 
-	op.params[0].tmpref.buffer = secret_get;
-	op.params[0].tmpref.size = sizeof(secret_get);
-	op.params[1].value.a = 1;
-
-
-	res = TEEC_InvokeCommand(&sess, CMD_SECRET_MANAGMENT_GET, &op, &err_origin);
-
-	printf(" Secret retrived :");
-	for (int i=0; i < sizeof(secret_get); i++){
-		printf("%c", secret_get[i]);
-	}
-	printf("\n");
-
-	//TEEC_CloseSession(&sess);	
-
-	// // Test3: leak secret using second session (improper access control)
-	// //Open a session 2 to the "hello world" TA, the TA will print "hello
-	// res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
-	// if (res != TEEC_SUCCESS)
-	// 	errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",res, err_origin);
-
-	// // secret managment tests
-	// uint8_t secret_leak[128] = {0};
-	// memset(secret_leak, 0,sizeof(secret_leak));
-
-	// memset(&op2, 0, sizeof(op2));
-	// op2.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
-	// 				 TEEC_NONE, TEEC_NONE);
-
-	// op2.params[0].tmpref.buffer = secret_leak;
-	// op2.params[0].tmpref.size = sizeof(secret_leak);
-	// op2.params[1].value.a = 1;
-
-	// res = TEEC_InvokeCommand(&sess, CMD_SECRET_MANAGMENT_GET, &op2, &err_origin);
-	// printf("Leak secret result:");
-	// for (int i=0; i < sizeof(secret_leak); i++){
-	// 	printf("%c", secret_leak[i]);
-	// }
-	// printf("\n");
-	// ------------------------ //
-
-
-	// Open a session 2 
-	res = TEEC_OpenSession(&ctx, &sess2, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
-	if (res != TEEC_SUCCESS)
-		errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",res, err_origin);
+	print_buffer(secret_get, sizeof(secret_get), "Secret retrived: ");
 	
-	uint8_t secret_leak[32] = {0};
-	memset(&op2, 0, sizeof(op2));
-	op2.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
+	terminate_tee_session(&ctx_sess1);
+	
+	// Test 3: Retrieve secret using a new session (information disclosure)
+	
+	prepare_tee_session(&ctx_sess1);
 
-	op2.params[0].tmpref.buffer = secret_leak;
-	op2.params[0].tmpref.size = sizeof(secret_leak);
-	op2.params[1].value.a = 1;
+	uint8_t secret_leak[64] = {0};
+	memset(secret_leak, 0,sizeof(secret_leak));
 
-	res = TEEC_InvokeCommand(&sess2, CMD_SECRET_MANAGMENT_GET, &op2, &err_origin);
-	printf("Leak secret result sess2:");
-	for (int i=0; i < sizeof(secret_leak); i++){
-		printf("%c", secret_leak[i]);
-	}
-	printf("\n");
-	/// ------------------------ //  
-	//Test 4 Store secret again using sess 2
-	memset(&op, 0, sizeof(op));
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
+	get_secret(secret_leak, sizeof(secret_leak) ,&ctx_sess1);  // Get secret using sess 2
 
-	//uint8_t secret[32] = {0};  
-	memset(secret, 'A', sizeof(secret));
+	print_buffer(secret_leak, sizeof(secret_leak), "Leak secret from a previous session: ");
 
-	printf(" store secret ss2: ");
-	for(int i=0; i < sizeof(secret); i++){	printf("%c",secret[i]);}
-	printf("\n");
-	// uint_8_t secret[64] = "This is a very secret key that must be protected!";
-	op.params[0].tmpref.buffer = secret;	
-	op.params[0].tmpref.size = sizeof(secret);
-	op.params[1].value.a = 1;
+	//Test 4 Store secret again
 
-	res = TEEC_InvokeCommand(&sess2, CMD_SECRET_MANAGMENT_STR, &op, &err_origin);
+	uint8_t secret_bigger[64] = {0};
+
+	memset(secret_bigger, 'A', sizeof(secret_bigger));
+
+	print_buffer(secret_bigger, sizeof(secret_bigger), "Store secret a secret bigger than the buffer: ");
+	
+	store_secret(secret_bigger, sizeof(secret_bigger), &ctx_sess1); // Store secret using sess 2
 
 	// Test 5: Retrieve secret using sess 1 (information disclosure)
 
-	memset(&op2, 0, sizeof(op2));
-	op2.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
-
-	op2.params[0].tmpref.buffer = secret_leak;
-	op2.params[0].tmpref.size = sizeof(secret_leak);
-	op2.params[1].value.a = 1;
-
-	res = TEEC_InvokeCommand(&sess, CMD_SECRET_MANAGMENT_GET, &op2, &err_origin);
-	printf("Leak secret result sess1:");
-	for (int i=0; i < sizeof(secret_leak); i++){
-		printf("%c", secret_leak[i]);
-	}
-	printf("\n");
-
+	memset(secret_leak, 0,sizeof(secret_leak));
+	
+	get_secret(secret_leak, sizeof(secret_leak), &ctx_sess1);  // Get secret using sess 1
+	
+	print_buffer(secret_leak, sizeof(secret_leak), "Leak secret after overflow: ");
+	
 	// Test 6: Trigger use after free (UAF)
 	uint8_t secret_uaf[32] = {0};
-	memset(secret_uaf, 0,sizeof(secret_uaf));
+	memset(secret_uaf, 'A',sizeof(secret_uaf));
+	allocate_secret(secret_uaf, sizeof(secret_uaf), &ctx_sess1); // Allocate secret using sess 1
 
-	memset(&op2, 0, sizeof(op2));
-	op2.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-
-	op2.params[0].tmpref.buffer = secret_uaf;
-	op2.params[0].tmpref.size = sizeof(secret_uaf);
-
-	res = TEEC_InvokeCommand(&sess, CMD_SECRET_ALLOCATE, &op2, &err_origin);	
-
-
-	TEEC_CloseSession(&sess);
-	TEEC_CloseSession(&sess2);
-						
-	TEEC_FinalizeContext(&ctx);
-	TEEC_FinalizeContext(&ctx2);
+	memset(secret_uaf, 'B',sizeof(secret_uaf));
+	allocate_secret(secret_uaf, sizeof(secret_uaf), &ctx_sess1); // Allocate secret using sess 1
+	
+	
+	terminate_tee_session(&ctx_sess1);
 
 	return 0;
 }
