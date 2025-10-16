@@ -37,7 +37,7 @@
  * param[2] (value) a: TA_AES_MODE_ENCODE/_DECODE, b: unused
  * param[3] unused
  */
-#define TA_AES_CMD_PREPARE		0
+#define TA_AES_CMD_PREPARE		2
 
 #define TA_AES_ALGO_ECB			0
 #define TA_AES_ALGO_CBC			1
@@ -56,7 +56,7 @@
  * param[2] unused
  * param[3] unused
  */
-#define TA_AES_CMD_SET_KEY		1
+#define TA_AES_CMD_SET_KEY		3
 
 /*
  * TA_AES_CMD_SET_IV - reset IV
@@ -65,7 +65,7 @@
  * param[2] unused
  * param[3] unused
  */
-#define TA_AES_CMD_SET_IV		2
+#define TA_AES_CMD_SET_IV		4
 
 /*
  * TA_AES_CMD_CIPHER - Cipher input buffer into output buffer
@@ -74,7 +74,7 @@
  * param[2] unused
  * param[3] unused
  */
-#define TA_AES_CMD_CIPHER		3
+#define TA_AES_CMD_CIPHER		5
 
 
 

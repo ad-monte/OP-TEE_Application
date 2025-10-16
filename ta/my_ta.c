@@ -1,10 +1,19 @@
+#include <inttypes.h> // to implement light cryptographic services AES
+#include <light_crypto_TA.h>
+
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
 #include <my_ta.h>
 #include <string.h>  // For memcpy()
 
+//AES constants
 
+#define AES128_KEY_BIT_SIZE		128
+#define AES128_KEY_BYTE_SIZE		(AES128_KEY_BIT_SIZE / 8)
+#define AES256_KEY_BIT_SIZE		256
+#define AES256_KEY_BYTE_SIZE		(AES256_KEY_BIT_SIZE / 8)
 
+extern struct aes_cipher; //aes global
 
 // VULN 1: Global shared state
 static uint8_t g_secret[32];
@@ -148,6 +157,16 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return store_secret(param_types, params, cmd_id);
 	case CMD_SECRET_MANAGMENT_GET:
 		return retrieve_secret(param_types, params, cmd_id);
+		
+	case TA_AES_CMD_PREPARE:
+		return alloc_resources(sess_ctx, param_types, params);
+	case TA_AES_CMD_SET_KEY:
+		return set_aes_key(sess_ctx, param_types, params);
+	case TA_AES_CMD_SET_IV:
+		return reset_aes_iv(sess_ctx, param_types, params);
+	case TA_AES_CMD_CIPHER:
+		return cipher_buffer(sess_ctx, param_types, params);
+
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
