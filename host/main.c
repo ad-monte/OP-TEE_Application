@@ -2,8 +2,17 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <light_crypto_host.h>
+
 #include <tee_client_api.h>
 #include <my_ta.h> 
+
+
+#define AES_TEST_BUFFER_SIZE	4096
+#define AES_TEST_KEY_SIZE	16
+#define AES_BLOCK_SIZE		16
+
+
 
 struct test_ctx {
 	TEEC_Context ctx;
@@ -75,19 +84,19 @@ void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
 	printf("\n");
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-	TEEC_Result res;
-	TEEC_Context ctx;
-	TEEC_Session sess;
-	TEEC_Operation op;
-	TEEC_UUID uuid = MY_TA_UUID;
-	uint32_t err_origin;
+	//TEEC_Result res;
+	//TEEC_Context ctx;
+	//TEEC_Session sess;
+	//TEEC_Operation op;
+	//TEEC_UUID uuid = MY_TA_UUID;
+	//uint32_t err_origin;
 
 	struct test_ctx ctx_sess1;
 	
-	ctx_sess1.ctx = ctx;
-	ctx_sess1.sess = sess;
+	/*ctx_sess1.ctx = ctx;
+	ctx_sess1.sess = sess;*/
 
 	prepare_tee_session(&ctx_sess1);
 
@@ -108,6 +117,90 @@ int main(void)
 	print_buffer(secret, sizeof(secret), "Store secret: ");
 
 	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
+
+	char key[AES_TEST_KEY_SIZE];
+	char iv[AES_BLOCK_SIZE];
+	char clear[AES_TEST_BUFFER_SIZE];
+	char ciph[AES_TEST_BUFFER_SIZE];
+	char temp[AES_TEST_BUFFER_SIZE];
+
+	//parse argument into buffer
+
+	if (argc < 2) {		//take plain text param
+        fprintf(stderr, "Usage: %s <plaintext_file>\n", argv[0]);
+        return 1;
+    }
+	const char *filename = argv[1]; //parse file name
+    FILE *fp = fopen(filename, "rb");
+    if (!fp) {
+        perror("Failed to open input file");
+        return 1;
+    }
+
+	// Read file into buffer
+    size_t clear_len = fread(clear, 1, AES_TEST_BUFFER_SIZE, fp);
+    fclose(fp);
+
+    if (clear_len == 0) {
+        fprintf(stderr, "Input file is empty or read error\n");
+        return 1;
+    }
+
+	//encrypt file
+
+	printf("Prepare encode operation\n");
+	prepare_aes(&ctx_sess1, ENCODE);
+
+	printf("Load key in TA\n");
+	memset(key, 0xa5, sizeof(key)); /* Load some dummy value  for the KEY*/
+	set_key(&ctx_sess1, key, AES_TEST_KEY_SIZE);
+
+	printf("Reset ciphering operation in TA (provides the initial vector)\n");
+	memset(iv, 0, sizeof(iv)); /* Load some dummy value as initial vector*/
+	set_iv(&ctx_sess1, iv, AES_BLOCK_SIZE);
+
+	printf("Encode buffer from TA\n");
+	//memset(clear, 0x5a, sizeof(clear)); /* Load some dummy value */
+	memset(ciph, 0, sizeof(ciph));
+	//cipher_buffer(&ctx, clear, ciph, AES_TEST_BUFFER_SIZE); // this was before adding the possibility to passs the text file name
+	cipher_buffer(&ctx_sess1, clear, ciph, clear_len);
+
+
+	// write ciphertext to a file
+    FILE *fout = fopen("ciphertext.bin", "wb");
+    if (fout) {
+        fwrite(ciph, 1, clear_len, fout);
+        fclose(fout);
+        printf("Ciphertext written to ciphertext.bin\n");
+    }
+	
+	//decode ciphered file
+
+	printf("Prepare decode operation\n");
+	prepare_aes(&ctx_sess1, DECODE);
+
+	printf("Load key in TA\n");
+	memset(key, 0xa5, sizeof(key)); /* Load some dummy value */
+	set_key(&ctx_sess1, key, AES_TEST_KEY_SIZE);
+
+	printf("Reset ciphering operation in TA (provides the initial vector)\n");
+	memset(iv, 0, sizeof(iv)); /* Load some dummy value */
+	set_iv(&ctx_sess1, iv, AES_BLOCK_SIZE);
+
+	printf("Decode buffer from TA\n");
+	//cipher_buffer(&ctx, ciph, temp, AES_TEST_BUFFER_SIZE);
+	cipher_buffer(&ctx_sess1, ciph, temp, clear_len);
+
+	/* Check decoded is the clear content */
+	if (memcmp(clear, temp, clear_len)) //AES_TEST_BUFFER_SIZE))
+		printf("Plain text and decoded text differ => ERROR\n");
+	else
+		printf("Plain text and decoded text match\n");
+
+
+
+
+
 
 
 

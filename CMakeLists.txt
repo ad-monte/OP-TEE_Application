@@ -1,6 +1,7 @@
 project (my_ta C)
 
-set (SRC host/main.c)
+set (SRC host/main.c
+		host/light_crypto_host.c)
 
 add_executable (${PROJECT_NAME} ${SRC})
 
