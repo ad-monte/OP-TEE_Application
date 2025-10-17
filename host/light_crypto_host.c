@@ -1,4 +1,5 @@
 #include <light_crypto_host.h>
+#include <my_ta.h> 
 
 //function from AES example taken to another file to keep main cleaner
 
@@ -17,8 +18,8 @@ void prepare_aes(struct test_ctx *ctx, int encode)
 	op.params[0].value.a = TA_AES_ALGO_CTR;
 	op.params[1].value.a = TA_AES_SIZE_128BIT;
 	op.params[2].value.a = encode ? TA_AES_MODE_ENCODE :
-					TA_AES_MODE_DECODE;
-
+					TA_AES_MODE_DECODE;	
+						
 	res = TEEC_InvokeCommand(&ctx->sess, TA_AES_CMD_PREPARE,
 				 &op, &origin);
 	if (res != TEEC_SUCCESS)

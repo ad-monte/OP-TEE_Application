@@ -54,7 +54,21 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 												TEE_PARAM_TYPE_NONE,
 												TEE_PARAM_TYPE_NONE);
 
+	struct aes_cipher *sess;
+
 	DMSG("has been called");
+	
+	sess = TEE_Malloc(sizeof(*sess), 0);
+	if (!sess)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	sess->key_handle = TEE_HANDLE_NULL;
+	sess->op_handle = TEE_HANDLE_NULL;
+
+	*sess_ctx = (void *)sess;
+
+	IMSG("Session %p: newly allocated", *sess_ctx);
+
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -154,18 +168,18 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 
 	switch (cmd_id) {
 	case CMD_SECRET_MANAGMENT_STR:
-		return store_secret(param_types, params, cmd_id);
+		return store_secret(param_types, params, cmd_id); //0
 	case CMD_SECRET_MANAGMENT_GET:
-		return retrieve_secret(param_types, params, cmd_id);
+		return retrieve_secret(param_types, params, cmd_id); //1 
 		
 	case TA_AES_CMD_PREPARE:
-		return alloc_resources(sess_ctx, param_types, params);
+		return alloc_resources(sess_ctx, param_types, params); //2
 	case TA_AES_CMD_SET_KEY:
-		return set_aes_key(sess_ctx, param_types, params);
+		return set_aes_key(sess_ctx, param_types, params); //3
 	case TA_AES_CMD_SET_IV:
-		return reset_aes_iv(sess_ctx, param_types, params);
+		return reset_aes_iv(sess_ctx, param_types, params); //4
 	case TA_AES_CMD_CIPHER:
-		return cipher_buffer(sess_ctx, param_types, params);
+		return cipher_buffer(sess_ctx, param_types, params); //5
 
 
 	default:

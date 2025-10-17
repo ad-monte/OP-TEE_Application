@@ -8,16 +8,22 @@
 #include <my_ta.h> 
 
 
+
 #define AES_TEST_BUFFER_SIZE	4096
 #define AES_TEST_KEY_SIZE	16
 #define AES_BLOCK_SIZE		16
 
+#define DECODE			0
+#define ENCODE			1
 
 
+
+extern struct test_ctx;  // Global shared state defined in light cripto host.h
+/*
 struct test_ctx {
 	TEEC_Context ctx;
 	TEEC_Session sess;
-};
+};*/
 
 void prepare_tee_session(struct test_ctx *ctx){
 
@@ -86,37 +92,9 @@ void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
 
 int main(int argc, char *argv[])
 {
-	//TEEC_Result res;
-	//TEEC_Context ctx;
-	//TEEC_Session sess;
-	//TEEC_Operation op;
-	//TEEC_UUID uuid = MY_TA_UUID;
-	//uint32_t err_origin;
 
 	struct test_ctx ctx_sess1;
 	
-	/*ctx_sess1.ctx = ctx;
-	ctx_sess1.sess = sess;*/
-
-	prepare_tee_session(&ctx_sess1);
-
-
-
-	// Test 0: Retrieve secret uninitialized (information disclosure)
-	uint8_t secret_get[64] = {0};
-	memset(secret_get, 0,sizeof(secret_get)); 
-
-	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
-
-	print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
-
-	// Test1 : store secret
-	uint8_t secret[32] = {0};  
-	memset(secret, 'B', sizeof(secret));
-	
-	print_buffer(secret, sizeof(secret), "Store secret: ");
-
-	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
 
 	char key[AES_TEST_KEY_SIZE];
 	char iv[AES_BLOCK_SIZE];
@@ -145,6 +123,27 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Input file is empty or read error\n");
         return 1;
     }
+
+	prepare_tee_session(&ctx_sess1);
+
+
+
+	// Test 0: Retrieve secret uninitialized (information disclosure)
+	uint8_t secret_get[64] = {0};
+	memset(secret_get, 0,sizeof(secret_get)); 
+
+	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
+
+	print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
+
+	// Test1 : store secret
+	uint8_t secret[32] = {0};  
+	memset(secret, 'B', sizeof(secret));
+	
+	print_buffer(secret, sizeof(secret), "Store secret: ");
+
+	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
+
 
 	//encrypt file
 
