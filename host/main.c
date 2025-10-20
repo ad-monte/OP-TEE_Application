@@ -67,22 +67,6 @@ void store_secret(uint8_t* secret, uint32_t size, struct test_ctx *ctx_sess){
 	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_MANAGMENT_STR, &op, &err_origin);
 }
 
-void allocate_secret(uint8_t* secret, uint32_t size, struct test_ctx *ctx_sess){
-
-	TEEC_Operation op;
-	TEEC_Result res;
-	uint32_t err_origin;
-
-	memset(&op, 0, size);
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INPUT,
-					 TEEC_NONE, TEEC_NONE);
-
-	op.params[0].tmpref.buffer = secret;	
-	op.params[0].tmpref.size = size;
-
-	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_ALLOCATE, &op, &err_origin);
-}
-
 void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
 	printf("%s",msg);
 	for(int i=0; i < size; i++){
@@ -113,9 +97,9 @@ int main(void)
 	uint8_t secret_get[64] = {0};
 	memset(secret_get, 0,sizeof(secret_get)); 
 
-	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
+	// get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
 
-	print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
+	// print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
 
 	// Test1 : store secret
 	uint8_t secret[32] = {0};  
@@ -140,7 +124,7 @@ int main(void)
 	
 	prepare_tee_session(&ctx_sess1);
 
-	uint8_t secret_leak[64] = {0};
+	uint8_t secret_leak[32] = {0};
 	memset(secret_leak, 0,sizeof(secret_leak));
 
 	get_secret(secret_leak, sizeof(secret_leak) ,&ctx_sess1);  // Get secret using sess 2
@@ -165,15 +149,7 @@ int main(void)
 	
 	print_buffer(secret_leak, sizeof(secret_leak), "Leak secret after overflow: ");
 	
-	// Test 6: Trigger use after free (UAF)
-	uint8_t secret_uaf[32] = {0};
-	memset(secret_uaf, 'A',sizeof(secret_uaf));
-	allocate_secret(secret_uaf, sizeof(secret_uaf), &ctx_sess1); // Allocate secret using sess 1
 
-	memset(secret_uaf, 'B',sizeof(secret_uaf));
-	allocate_secret(secret_uaf, sizeof(secret_uaf), &ctx_sess1); // Allocate secret using sess 1
-	
-	
 	terminate_tee_session(&ctx_sess1);
 
 	return 0;
