@@ -30,15 +30,6 @@
 
 #include <tee_internal_api.h>
 
-#define TA_AES_ALGO_ECB			0
-#define TA_AES_ALGO_CBC			1
-#define TA_AES_ALGO_CTR			2
-
-#define TA_AES_SIZE_128BIT		(128 / 8)
-#define TA_AES_SIZE_256BIT		(256 / 8)
-
-#define TA_AES_MODE_ENCODE		1
-#define TA_AES_MODE_DECODE		0
 
 struct aes_cipher {
 	uint32_t algo;			/* AES flavour */
