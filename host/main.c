@@ -124,10 +124,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+
+
+
 	prepare_tee_session(&ctx_sess1);
-
-
-
 	// Test 0: Retrieve secret uninitialized (information disclosure)
 	uint8_t secret_get[64] = {0};
 	memset(secret_get, 0,sizeof(secret_get)); 
@@ -144,6 +144,15 @@ int main(int argc, char *argv[])
 
 	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
 
+	terminate_tee_session(&ctx_sess1);
+	prepare_tee_session(&ctx_sess1);
+
+	// Test 2: Retrieve secret initialized
+	memset(secret_get, 0,sizeof(secret_get));
+
+	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
+
+	print_buffer(secret_get, sizeof(secret_get), "Secret next session: ");
 
 	//encrypt file
 

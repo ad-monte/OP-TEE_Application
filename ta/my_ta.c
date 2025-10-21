@@ -15,14 +15,14 @@
 
 extern struct aes_cipher; //aes global
 
-// VULN 1: Global shared state
-static uint8_t g_secret[32];
-static uint32_t g_secret_size;
-static bool g_initialized = false;
+/*-------------secret managment variables--------------------*/ 
 
 // VULN 2: Global pointer to secret data
-static uint8_t *g_secret_buffer = NULL;
-static uint32_t g_secret_size = 0;
+static uint8_t *secret      = NULL;
+static uint32_t secret_size = 0;
+static uint32_t access_id   = 0;
+
+/*-------------end secret managment variables -------------------*/ 
 
 TEE_Result TA_CreateEntryPoint(void)
 {
@@ -110,48 +110,61 @@ static TEE_Result store_secret(uint32_t param_types,
 							   TEE_PARAM_TYPE_NONE,
 							   TEE_PARAM_TYPE_NONE);
 		
-		if (param_types != exp_param_types)
+		if (param_types != exp_param_types){
+			IMSG("bad param types");
 			return TEE_ERROR_BAD_PARAMETERS;
-		//vulnerability: unchecked parameter bounds
-		uint8_t *secret      = params[0].memref.buffer;
-		uint32_t secret_size = params[0].memref.size;
-		uint32_t access_id   = params[1].value.a;
-		// vulnerability: possible overflow
-		memcpy(g_secret, secret, secret_size);
+		}
+			
+		// Store the secret in global variables (ignore security issues): use secret and secret_size. 
 		
-		g_secret_buffer = secret;	
-		g_secret_size = secret_size;
-		
-		IMSG("g_secret_size: %d", g_secret_size);
+		// Vulneravility: pointer to secret data in global variable is taggling after free
+		if(secret){
+			TEE_Free(secret);  								// free previous secret
+			secret = NULL;
+		}			
+		secret = TEE_Malloc(params[0].memref.size, 0);		// allocate memory for new secret
+		if(!secret){
+			return TEE_ERROR_OUT_OF_MEMORY;					//	 check allocation
+		}
+		memcpy( secret , params[0].memref.buffer 
+		, params[0].memref.size); 							// copy new secret
+
+		secret_size = params[0].memref.size;
+		access_id   = params[1].value.a;
+	
+
 		return TEE_SUCCESS;
 	}
-
 
 	static TEE_Result retrieve_secret(uint32_t param_types,
 		TEE_Param params[4],uint32_t cmd_id) {
 	
-			IMSG("unsecure storing");
+			IMSG("unsecure retrieving");
 			
 			uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
 								   TEE_PARAM_TYPE_VALUE_INPUT,
 								   TEE_PARAM_TYPE_NONE,
 								   TEE_PARAM_TYPE_NONE);
 			
-			if (param_types != exp_param_types)
+			if (param_types != exp_param_types){
+				IMSG("bad param types");
 				return TEE_ERROR_BAD_PARAMETERS;
-		
+			}	
 
 			uint8_t *out_buffer = params[0].memref.buffer;
 			uint32_t out_buffer_size = params[0].memref.size;
 			uint32_t access_id = params[1].value.a;
 	
-			memcpy( out_buffer , g_secret , out_buffer_size);
+			if(secret == NULL){
+				IMSG("No secret stored");
+				return TEE_ERROR_BAD_PARAMETERS;
+			}
+			memcpy( out_buffer , secret , out_buffer_size);
 	
 	
-			IMSG("g_secret_size: %d", g_secret_size);
+			//IMSG("g_secret_size: %d", g_secret_size);
 			return TEE_SUCCESS;
 		}
-
 
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
