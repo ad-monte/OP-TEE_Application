@@ -94,6 +94,65 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 }
 
 
+static uint8_t user[] = "Sebastian";
+static uint8_t pass[] = "Alfonso";
+
+
+static TEE_Result password_validation(uint32_t param_types,
+			TEE_Param params[4])
+		{
+			uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+								   TEE_PARAM_TYPE_VALUE_OUTPUT,
+								   TEE_PARAM_TYPE_NONE,
+								   TEE_PARAM_TYPE_NONE);
+
+			if (param_types != exp_param_types){
+				IMSG("Parameter type mismatch!");
+				return TEE_ERROR_BAD_PARAMETERS;
+			}
+			int8_t int_validity	=	0;
+			int8_t str_validity	=	0;
+			int8_t validated 	= params[1].value.a; // output param
+			uint8_t *input_str 	= params[0].memref.buffer;
+			uint32_t length    	= params[0].memref.size;
+
+
+			IMSG("validate password is being called");
+			IMSG("Parameter type is: %u", param_types);
+			IMSG("Expected parameter type is: %u", exp_param_types);
+
+			//validate str input from NW
+			//validate int input from NW (length)
+
+			IMSG("Got value: %s from NW 1", (const char*)input_str);
+			IMSG("Length received is: %u", (length));
+			
+			const char *pass_str = (const char *)pass;
+	
+			int_validity = 1;
+			str_validity = 1;
+
+			if(!int_validity){
+				IMSG("Integer input validation failed!");
+				return TEE_ERROR_BAD_PARAMETERS;
+			}
+			else if(!str_validity){
+				IMSG("String input validation failed!");
+				return TEE_ERROR_BAD_PARAMETERS;	
+			}
+			else{
+				// strcmp(input_str, g_password)==0 ? validated=1 : validated=0;
+				validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;
+				printf("Password validation result: %d\n", validated);
+			}
+			params[1].value.a = validated; // set output param
+
+			return TEE_SUCCESS;
+}
+		
+
+
+
 static TEE_Result store_secret(uint32_t param_types,
 	TEE_Param params[4],uint32_t cmd_id) {
 
@@ -130,7 +189,7 @@ static TEE_Result store_secret(uint32_t param_types,
 		return TEE_SUCCESS;
 	}
 
-	static TEE_Result retrieve_secret(uint32_t param_types,
+static TEE_Result retrieve_secret(uint32_t param_types,
 		TEE_Param params[4],uint32_t cmd_id) {
 	
 			IMSG("unsecure retrieving");
@@ -160,11 +219,11 @@ static TEE_Result store_secret(uint32_t param_types,
 			return TEE_SUCCESS;
 		}
 
-/*
- * Called when a TA is invoked. sess_ctx hold that value that was
- * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
- * comes from normal world.
- */
+
+
+
+
+	
 TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 			uint32_t cmd_id,
 			uint32_t param_types, TEE_Param params[4])
@@ -178,7 +237,6 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return store_secret(param_types, params, cmd_id); //0
 	case CMD_SECRET_MANAGMENT_GET:
 		return retrieve_secret(param_types, params, cmd_id); //1 
-		
 	case TA_AES_CMD_PREPARE:
 		return alloc_resources(sess_ctx, param_types, params); //2
 	case TA_AES_CMD_SET_KEY:
@@ -187,7 +245,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return reset_aes_iv(sess_ctx, param_types, params); //4
 	case TA_AES_CMD_CIPHER:
 		return cipher_buffer(sess_ctx, param_types, params); //5
-
+	case CMD_PASSWORD_VALIDATION:
+		return password_validation(param_types, params); //6
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

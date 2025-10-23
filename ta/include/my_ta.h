@@ -43,15 +43,12 @@
 /* The function IDs implemented in this TA */
 // check this commands.
 
-#define CMD_SECRET_MANAGMENT_STR   10  // Insecure storage
-#define CMD_SECRET_MANAGMENT_GET   11  // Insecure storage
-#define CMD_SECRET_ALLOCATE        12  // Insecure storage
 
-#define CMD_LIGHT_CRYPTOGRAPHIC 3
-#define CMD_INPUT_VALIDATION 4
-// hello world CMD
+// secret management commands 
+
 #define CMD_SECRET_MANAGMENT_STR 0
 #define CMD_SECRET_MANAGMENT_GET 1
+#define CMD_PASSWORD_VALIDATION 7
 
 
 /*

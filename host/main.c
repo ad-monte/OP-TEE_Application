@@ -90,6 +90,40 @@ void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
 	printf("\n");
 }
 
+void password_validation(uint8_t* password_input, struct test_ctx *ctx_sess){
+
+	TEEC_Operation op;
+	TEEC_Result res;
+	uint32_t validation; 
+	uint32_t err_origin;
+
+	memset(&op, 0, sizeof(op));
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_VALUE_OUTPUT,
+					 TEEC_NONE,
+					 TEEC_NONE);
+	
+	printf("Password to validate: %s\n", (const char*)password_input);
+
+	op.params[0].tmpref.buffer = password_input;
+	op.params[0].tmpref.size = strlen((char*)password_input) + 1;
+	op.params[1].value.a = validation; // initialize output
+
+	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_PASSWORD_VALIDATION, &op, &err_origin);
+	
+	// check result
+	if (res != TEEC_SUCCESS) {
+		printf("Password validation failed with code 0x%x origin 0x%x\n", res, err_origin);
+	} 
+	if(op.params[1].value.a == 1){
+		printf("Password is valid\n");
+	} else {
+		printf("Password is invalid\n");
+	}
+
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -103,6 +137,8 @@ int main(int argc, char *argv[])
 	char temp[AES_TEST_BUFFER_SIZE];
 
 	//parse argument into buffer
+
+	printf("This is the TA host application\n");
 
 	if (argc < 2) {		//take plain text param
         fprintf(stderr, "Usage: %s <plaintext_file>\n", argv[0]);
@@ -154,6 +190,17 @@ int main(int argc, char *argv[])
 
 	print_buffer(secret_get, sizeof(secret_get), "Secret next session: ");
 
+	// password validation test
+	printf("Password validation test\n");
+
+	uint8_t* password_input = "password"; // wrong password
+
+	password_validation(password_input, &ctx_sess1);	
+
+	password_input = "Alfonso"; // wrong password
+
+	password_validation(password_input, &ctx_sess1);	
+
 	//encrypt file
 
 	printf("Prepare encode operation\n");
@@ -204,7 +251,6 @@ int main(int argc, char *argv[])
 		printf("Plain text and decoded text differ => ERROR\n");
 	else
 		printf("Plain text and decoded text match\n");
-
 
 	terminate_tee_session(&ctx_sess1);
 
