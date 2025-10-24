@@ -96,7 +96,7 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 
 static char user[] = "Sebastian";
 static char pass[] = "Alfonso";
-
+//static char buf[MAX_SIZE];
 
 static TEE_Result password_validation(uint32_t param_types,
 			TEE_Param params[4])
@@ -129,7 +129,7 @@ static TEE_Result password_validation(uint32_t param_types,
 			
 			const char *pass_str = (const char *)pass;
 	
-			validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;
+			validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;//Seems vulnerable to timing attacks
 			printf("Password validation result: %d\n", validated);
 
 			params[1].value.a = validated; // set output param
@@ -157,7 +157,7 @@ static TEE_Result store_secret(uint32_t param_types,
 			
 		// Store the secret in global variables (ignore security issues): use secret and secret_size. 
 		
-		// Vulneravility: pointer to secret data in global variable is taggling after free
+		// Vulnerability: pointer to secret data in global variable is dangling after free
 		if(secret){
 			TEE_Free(secret);  								// free previous secret
 			secret = NULL;
