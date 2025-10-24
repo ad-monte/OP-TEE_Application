@@ -94,8 +94,8 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 }
 
 
-static uint8_t user[] = "Sebastian";
-static uint8_t pass[] = "Alfonso";
+static char user[] = "Sebastian";
+static char pass[] = "Alfonso";
 
 
 static TEE_Result password_validation(uint32_t param_types,
@@ -113,38 +113,25 @@ static TEE_Result password_validation(uint32_t param_types,
 			int8_t int_validity	=	0;
 			int8_t str_validity	=	0;
 			int8_t validated 	= params[1].value.a; // output param
-			uint8_t *input_str 	= params[0].memref.buffer;
+			char* input_str 	= params[0].memref.buffer;
 			uint32_t length    	= params[0].memref.size;
 
 
 			IMSG("validate password is being called");
-			IMSG("Parameter type is: %u", param_types);
-			IMSG("Expected parameter type is: %u", exp_param_types);
+			// IMSG("Parameter type is: %u", param_types);
+			// IMSG("Expected parameter type is: %u", exp_param_types);
 
 			//validate str input from NW
 			//validate int input from NW (length)
 
-			IMSG("Got value: %s from NW 1", (const char*)input_str);
+			IMSG("Got value: %s from NW 1", input_str);
 			IMSG("Length received is: %u", (length));
 			
 			const char *pass_str = (const char *)pass;
 	
-			int_validity = 1;
-			str_validity = 1;
+			validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;
+			printf("Password validation result: %d\n", validated);
 
-			if(!int_validity){
-				IMSG("Integer input validation failed!");
-				return TEE_ERROR_BAD_PARAMETERS;
-			}
-			else if(!str_validity){
-				IMSG("String input validation failed!");
-				return TEE_ERROR_BAD_PARAMETERS;	
-			}
-			else{
-				// strcmp(input_str, g_password)==0 ? validated=1 : validated=0;
-				validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;
-				printf("Password validation result: %d\n", validated);
-			}
 			params[1].value.a = validated; // set output param
 
 			return TEE_SUCCESS;

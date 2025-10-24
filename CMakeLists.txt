@@ -1,7 +1,10 @@
 project (ta_secret C)
 
 set (SRC host/main.c
-		host/light_crypto_host.c)
+		host/light_crypto_host.c
+		host/password.c
+		host/secret.c
+		host/crypto.c)
 
 add_executable (${PROJECT_NAME} ${SRC})
 
