@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
 	//parse argument into buffer
 
-	printf("This is the TA host application\n");
+	printf("This is the TA host application, my test\n");
 
 	if (argc < 2) {		//take plain text param
         fprintf(stderr, "Usage: %s <plaintext_file>\n", argv[0]);
