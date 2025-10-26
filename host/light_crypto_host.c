@@ -1,4 +1,5 @@
 #include <light_crypto_host.h>
+#include <my_ta.h>
 
 //function from AES example taken to another file to keep main cleaner
 

@@ -28,7 +28,6 @@
 #define MY_TA_H
 
 
-
 /*
  * This UUID is generated with uuidgen
  * the ITU-T UUID generator at http://www.itu.int/ITU-T/asn1/uuid.html
@@ -37,6 +36,8 @@
 	{ 0x16f9d3f4, 0x398d, 0x4394, \
 		{ 0x93, 0x71, 0x91, 0x3b, 0xf5, 0x56, 0x92, 0xb9} }
 
+// 	{ 0x16f9d3f4, 0x398d, 0x4394, \
+	//	{ 0x91, 0x3b, 0xf5, 0x56, 0x92, 0x9b} }
 				
 
 /* The function IDs implemented in this TA */
@@ -44,13 +45,58 @@
 #define CMD_SECRET_MANAGMENT
 #define CMD_LIGHT_CRYPTOGRAPHIC
 #define CMD_INPUT_VALIDATION 
-
-
 // hello world CMD
-#define MY_TA_CMD_INC_VALUE		8
-#define MY_TA_CMD_DEC_VALUE		9
+#define CMD_SECRET_MANAGMENT_STR 0
+#define CMD_SECRET_MANAGMENT_GET 1
 
 
+/*
+ * TA_AES_CMD_PREPARE - Allocate resources for the AES ciphering
+ * param[0] (value) a: TA_AES_ALGO_xxx, b: unused
+ * param[1] (value) a: key size in bytes, b: unused
+ * param[2] (value) a: TA_AES_MODE_ENCODE/_DECODE, b: unused
+ * param[3] unused
+ */
+#define TA_AES_CMD_PREPARE		8
 
+
+/*
+ * TA_AES_CMD_SET_KEY - Allocate resources for the AES ciphering
+ * param[0] (memref) key data, size shall equal key length
+ * param[1] unused
+ * param[2] unused
+ * param[3] unused
+ */
+#define TA_AES_CMD_SET_KEY		3
+
+/*
+ * TA_AES_CMD_SET_IV - reset IV
+ * param[0] (memref) initial vector, size shall equal block length
+ * param[1] unused
+ * param[2] unused
+ * param[3] unused
+ */
+#define TA_AES_CMD_SET_IV		4
+
+/*
+ * TA_AES_CMD_CIPHER - Cipher input buffer into output buffer
+ * param[0] (memref) input buffer
+ * param[1] (memref) output buffer (shall be bigger than input buffer)
+ * param[2] unused
+ * param[3] unused
+ */
+#define TA_AES_CMD_CIPHER		5
+
+//Crypto Settings
+
+#define TA_AES_ALGO_ECB			0
+#define TA_AES_ALGO_CBC			1
+#define TA_AES_ALGO_CTR			2
+
+#define TA_AES_SIZE_128BIT		(128 / 8)
+#define TA_AES_SIZE_256BIT		(256 / 8)
+
+#define TA_AES_MODE_ENCODE		1
+#define TA_AES_MODE_DECODE		0
 
 #endif /*TA_HELLO_WORLD_H*/

@@ -106,7 +106,7 @@ void TA_CloseSessionEntryPoint(void __maybe_unused *sess_ctx)
 	(void)&sess_ctx; /* Unused parameter */
 	IMSG("Goodbye!\n");
 }
-
+/*
 static TEE_Result inc_value(uint32_t param_types,
 	TEE_Param params[4])							//stuff from hello world ---unused atm
 {
@@ -145,7 +145,7 @@ static TEE_Result dec_value(uint32_t param_types,
 	IMSG("Decrease value to: %u", params[0].value.a);
 
 	return TEE_SUCCESS;
-}
+}*/
 /*
  * Called when a TA is invoked. sess_ctx hold that value that was
  * assigned by TA_OpenSessionEntryPoint(). The rest of the paramters
@@ -168,11 +168,11 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return reset_aes_iv(sess_ctx, param_types, params);
 	case TA_AES_CMD_CIPHER:
 		return cipher_buffer(sess_ctx, param_types, params);	
-
+/*
 	case MY_TA_CMD_INC_VALUE:
 		return inc_value(param_types, params);
 	case MY_TA_CMD_DEC_VALUE:
-		return dec_value(param_types, params);
+		return dec_value(param_types, params);*/
 
 	/*case CMD_SECRET_MANAGMENT:
 		return 0;
