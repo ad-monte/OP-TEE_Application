@@ -49,7 +49,8 @@
 #define CMD_SECRET_MANAGMENT_STR 0
 #define CMD_SECRET_MANAGMENT_GET 1
 #define CMD_PASSWORD_VALIDATION 7
-
+#define CMD_UPDATE_LOG 10
+#define CMD_GET_LOG 11
 
 /*
  * TA_AES_CMD_PREPARE - Allocate resources for the AES ciphering
