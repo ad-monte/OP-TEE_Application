@@ -23,6 +23,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 {
 	(void)&sess_ctx; /* Unused parameter */
 
+	IMSG("TA_InvokeCommandEntryPoint has been called with cmd_id=0x%" PRIx32, cmd_id);
 	// We could have a command ID for each type of vulneravility.
 
 	switch (cmd_id)
@@ -41,6 +42,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 		return cipher_buffer(sess_ctx, param_types, params); // 5
 	case CMD_PASSWORD_VALIDATION:
 		return password_validation(param_types, params); // 6
+	case CMD_UPDATE_LOG:
+		return updateLog(param_types, params); // 
+	case CMD_GET_LOG:
+		return get_log_entry(param_types, params); //	
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
