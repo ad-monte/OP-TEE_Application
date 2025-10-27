@@ -1,5 +1,5 @@
-#ifndef PASSWORD_H
-#define PASSWORD_H
+#ifndef SECRET_H
+#define SECRET_H
 
 #include <err.h>
 #include <stdio.h>

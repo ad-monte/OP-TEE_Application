@@ -1,6 +1,6 @@
 #include <password.h>
 
-void password_validation(char* password_input, struct test_ctx *ctx_sess){
+int password_validation(char* password_input, struct test_ctx *ctx_sess){
 
 	TEEC_Operation op;
 	TEEC_Result res;
@@ -28,8 +28,10 @@ void password_validation(char* password_input, struct test_ctx *ctx_sess){
 	} 
 	if(op.params[1].value.a == 1){
 		printf("Password is valid\n");
+		return VALID_PASSWORD;
 	} else {
 		printf("Password is invalid\n");
+		return INVALID_PASSWORD;
 	}
 
 }

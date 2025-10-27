@@ -11,63 +11,109 @@ int main(int argc, char *argv[])
 {
 
 	struct test_ctx ctx_sess1;
+
 	
-
-
 	//parse argument into buffer
 
 	printf("This is the TA host application, my test\n");
 
-	if (argc < 2) {		//take plain text param
-        fprintf(stderr, "Usage: %s <plaintext_file>\n", argv[0]);
+	if (argc < 3) {		//take plain text param
+        fprintf(stderr, "BAD ARGUMENTS: %s called with %d arguments when at least 2 are required.", argv[0], argc -1);
         return 1;
     }
-	char *filename = argv[1]; //parse file name
-
-	prepare_tee_session(&ctx_sess1);
-	// Test 0: Retrieve secret uninitialized (information disclosure)
-	uint8_t secret_get[64] = {0};
-	memset(secret_get, 0,sizeof(secret_get)); 
-
-	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
-
-	print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
-
-	// Test1 : store secret
-	uint8_t secret[32] = {0};  
-	memset(secret, 'B', sizeof(secret));
-	
-	// print_buffer(secret, sizeof(secret), "Store secret: ");
-	printf("Store secret test %s\n", (char *)secret);
-
-	store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
-
-	terminate_tee_session(&ctx_sess1);
+	char *filename = argv[2]; //parse file name
+	char *instruction = argv[1]; //parse instruction
+	char *key;//parse key
+	char *pwd;
+	int success = 0;
 	prepare_tee_session(&ctx_sess1);
 
-	// Test 2: Retrieve secret initialized
-	memset(secret_get, 0,sizeof(secret_get));
-
-	get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
-
-	print_buffer(secret_get, sizeof(secret_get), "Secret next session: ");
-
-	// Test 3: validation test
 	
-	printf("Password validation test\n");
+	switch (instruction[1]) {
+		case 'e':
+			pwd = argv[4];//parse password
+			key = argv[3];//parse key
+			if(password_validation(pwd, &ctx_sess1)){
+				updateLog((uint8_t *) "Encrypting",strlen("Encrypting")+1, &ctx_sess1);
+				encrypt_file(filename, &ctx_sess1, key);
+				success = 1;
+			}
+			break;
+		case 'd':
+			pwd = argv[3];//parse password
+			key = argv[2];//parse key
+			if(password_validation(pwd, &ctx_sess1)){
+				updateLog((uint8_t *) "Decrypting",strlen("Decrypting")+1, &ctx_sess1);
+				decrypt_file(&ctx_sess1, key);
+				success = 1;
+			}
+			break;
+		case 'a':
+			pwd = argv[3];//parse password
+			uint8_t log_msg[64];
+			uint8_t log_time[32];
+			int log_index = argv[2]; // to be defined
+			if(password_validation(pwd, &ctx_sess1)){
+				updateLog("Accessing log",strlen("Accessing log")+1, &ctx_sess1);
+				getLog(log_msg,64,log_time,32,log_index,&ctx_sess1); // Parameters to be defined
+				printf("Log message: %s\n",(char *) log_msg);
+				printf("Log time: %s\n", (char *) log_time);
+				success = 1;
+			}
+			break;
+		default:
+			fprintf(stderr,"BAD ARGUMENTS: %s called with an unrecognized instrution: %s", argv[0], argv[1]);
+			return 1;
+	}
+	
+	
+	if(!success){
+		fprintf(stderr, "WRONG CREDENTIALS");
+	}
+	
+	// // Test 0: Retrieve secret uninitialized (information disclosure)
+	// uint8_t secret_get[64] = {0};
+	// memset(secret_get, 0,sizeof(secret_get)); 
 
-	char* password_input = "password"; // wrong password
+	// get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
 
-	password_validation(password_input, &ctx_sess1);	
+	// print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
 
-	char* password_input2 = argv[2];//"Alfonso"; // wrong password
+	// // Test1 : store secret
+	// uint8_t secret[32] = {0};  
+	// memset(secret, 'B', sizeof(secret));
+	
+	// // print_buffer(secret, sizeof(secret), "Store secret: ");
+	// printf("Store secret test %s\n", (char *)secret);
 
-	password_validation(password_input2, &ctx_sess1);	
+	// store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
 
-	//Test 4: Encrypt file
-	encrypt_file(filename, &ctx_sess1);
-	//Test 5: Decode file
-	decript_file(&ctx_sess1);
+	// terminate_tee_session(&ctx_sess1);
+	// prepare_tee_session(&ctx_sess1);
+
+	// // Test 2: Retrieve secret initialized
+	// memset(secret_get, 0,sizeof(secret_get));
+
+	// get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
+
+	// print_buffer(secret_get, sizeof(secret_get), "Secret next session: ");
+
+	// // Test 3: validation test
+	
+	// printf("Password validation test\n");
+
+	// char* password_input = "password"; // wrong password
+
+	// password_validation(password_input, &ctx_sess1);	
+
+	// char* password_input2 = argv[2];//"Alfonso"; // wrong password
+
+	// password_validation(password_input2, &ctx_sess1);	
+
+	// //Test 4: Encrypt file
+	// encrypt_file(filename, &ctx_sess1);
+	// //Test 5: Decode file
+	// decript_file(&ctx_sess1);
 	
 	//Terminate TEE session
 	terminate_tee_session(&ctx_sess1);

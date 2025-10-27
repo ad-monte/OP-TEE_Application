@@ -4,12 +4,13 @@
 //Global variables - vulnerability
 char clear[AES_TEST_BUFFER_SIZE];
 char ciph[AES_TEST_BUFFER_SIZE];
-size_t clear_len;
 
-encrypt_file(char* filename, struct test_ctx *ctx_sess1){
 
-	char key[AES_TEST_KEY_SIZE];
+void encrypt_file(char* filename, struct test_ctx *ctx_sess1, char* key){
+	//String size should be validated
+	// char key[AES_TEST_KEY_SIZE];
 	char iv[AES_BLOCK_SIZE];
+	size_t clear_len;
 
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
@@ -30,8 +31,8 @@ encrypt_file(char* filename, struct test_ctx *ctx_sess1){
 	printf("Prepare encode operation\n");
 	prepare_aes(ctx_sess1, ENCODE);
 
-	printf("Load key in TA\n");
-	memset(key, 0xa5, sizeof(key)); /* Load some dummy value  for the KEY*/
+	printf("Load key: %s in TA\n", key);
+	// memset(key, 0xa5, sizeof(key)); /* Load some dummy value  for the KEY*/
 	set_key(ctx_sess1, key, AES_TEST_KEY_SIZE);
 
 	printf("Reset ciphering operation in TA (provides the initial vector)\n");
@@ -54,17 +55,34 @@ encrypt_file(char* filename, struct test_ctx *ctx_sess1){
     }
 }
 
-decript_file(struct test_ctx *ctx_sess1){
+void decrypt_file(struct test_ctx *ctx_sess1, char *key){
 
-	char key[AES_TEST_KEY_SIZE];
+	// char key[AES_TEST_KEY_SIZE];
 	char iv[AES_BLOCK_SIZE];
 	char temp[AES_TEST_BUFFER_SIZE];
+	size_t ciph_len;
 
-    printf("Prepare decode operation\n");
+
+	FILE *fp = fopen("ciphertext.bin", "rb");
+    if (!fp) {
+        perror("Failed to open input file");
+        return 1;
+    }
+
+	// Read file into buffer
+    ciph_len = fread(ciph, 1, AES_TEST_BUFFER_SIZE, fp);
+    fclose(fp);
+
+    if (ciph_len == 0) {
+        fprintf(stderr, "Cipher file is empty or read error\n");
+        return 1;
+    }
+	printf("Expected output: %s\n", clear);
 	prepare_aes(ctx_sess1, DECODE);
 
-	printf("Load key in TA\n");
-	memset(key, 0xa5, sizeof(key)); /* Load some dummy value */
+	printf("Load key: %s in TA\n", key);
+	// memset(key, 0xa5, sizeof(key)); /* Load some dummy value */
+
 	set_key(ctx_sess1, key, AES_TEST_KEY_SIZE);
 
 	printf("Reset ciphering operation in TA (provides the initial vector)\n");
@@ -73,13 +91,8 @@ decript_file(struct test_ctx *ctx_sess1){
 
 	printf("Decode buffer from TA\n");
 	//cipher_buffer(&ctx, ciph, temp, AES_TEST_BUFFER_SIZE);
-	cipher_buffer(ctx_sess1, ciph, temp, clear_len);
+	cipher_buffer(ctx_sess1, ciph, temp, ciph_len);
 
     printf("Decoded text is: %s\n", temp);
 
-	/* Check decoded is the clear content */
-	if (memcmp(clear, temp, clear_len)) //AES_TEST_BUFFER_SIZE))
-		printf("Plain text and decoded text differ => ERROR\n");
-	else
-		printf("Plain text and decoded text match\n");
 }

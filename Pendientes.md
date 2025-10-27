@@ -1,8 +1,8 @@
 __Ideas para Trusted App__
 
 1. ta_secret -e test.txt key pwd //encrypt Hardcoded
-2. ta_secret -d test.txt key pwd //decrypt Hardcoded
-3. ta_secret -a pwd //Acceso a access log
+2. ta_secret -d key pwd //decrypt Hardcoded
+3. ta_secret -a num pwd //Acceso a access log
     
     -Verificar PWD (SebasRico) 
     -text.txt: {PlainText} 

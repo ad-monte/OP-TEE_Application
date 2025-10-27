@@ -9,8 +9,11 @@
 #include <tee_client_api.h>
 #include <light_crypto_host.h>
 
+#define VALID_PASSWORD 1
+#define INVALID_PASSWORD 0
+
 extern struct test_ctx;
 
-void password_validation(char* password_input, struct test_ctx *ctx_sess);
+int password_validation(char* password_input, struct test_ctx *ctx_sess);
 
 #endif

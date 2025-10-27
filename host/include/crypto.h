@@ -15,9 +15,13 @@
 #define DECODE			0
 #define ENCODE			1
 
+struct crypto_params {
+	char key[AES_TEST_KEY_SIZE];
+	char iv[AES_BLOCK_SIZE];
+};
 extern struct test_ctx;
 
-encrypt_file(char* filename, struct test_ctx *ctx_sess);
-decript_file(struct test_ctx *ctx_sess1);
+void encrypt_file(char* filename, struct test_ctx *ctx_sess, char *key);
+void decrypt_file(struct test_ctx *ctx_sess1, char *key);
 
 #endif
