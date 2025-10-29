@@ -20,7 +20,7 @@ void updateLog(uint8_t* log_msg, uint32_t size, struct test_ctx *ctx_sess){
 
 }
 
-void getLog( uint8_t* log_msg, uint32_t size, uint8_t* log_time, uint32_t size_time, uint32_t indexLog, struct test_ctx *ctx_sess){
+void getLog( uint8_t* log_msg, uint32_t size, uint8_t* log_time, uint32_t size_time, int32_t indexLog, struct test_ctx *ctx_sess){
 
 	TEEC_Operation op;
 	TEEC_Result res;

@@ -205,7 +205,8 @@ TEE_Result get_log_entry(uint32_t   param_types,
 	TEE_CloseObject(obj);
 
 
-	uint32_t entry_index = params[1].value.a % 10;
+	//uint32_t entry_index = params[1].value.a % 10;//Safety against out of bounds reading
+	int32_t entry_index = params[1].value.a;//Safety against out of bounds reading
 
     char *out_buffer = params[0].memref.buffer;
     uint32_t out_sz  = params[0].memref.size;
@@ -213,12 +214,14 @@ TEE_Result get_log_entry(uint32_t   param_types,
 	char *src_timestamp = params[2].memref.size;
 
     const char *src = log_data.message[entry_index];
+	IMSG("Timestamp pointer: %x", log_data.message);
     uint32_t src_len = (uint32_t)strnlen(src, sizeof(log_data.message[entry_index]));
     uint32_t n = src_len < out_sz ? src_len : out_sz;
     TEE_MemMove(out_buffer, src, n);
     params[0].memref.size = n; // tell host how many bytes returned
 
 	const char *src_time = log_data.timestamp[entry_index];
+	IMSG("Timestamp pointer: %x", log_data.timestamp);
 	uint32_t src_time_len = (uint32_t)strnlen(src_time, sizeof(log_data.timestamp[entry_index]));
 	uint32_t n_time = src_time_len < src_timestamp ? src_time_len : src_timestamp;
 	TEE_MemMove(out_timestamp, src_time, n_time);

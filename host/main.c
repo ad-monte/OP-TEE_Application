@@ -27,14 +27,13 @@ int main(int argc, char *argv[])
 	char *pwd;
 	int success = 0;
 	prepare_tee_session(&ctx_sess1);
-
 	
 	switch (instruction[1]) {
 		case 'e':
 			pwd = argv[4];//parse password
 			key = argv[3];//parse key
 			if(password_validation(pwd, &ctx_sess1)){
-				updateLog((uint8_t *) "Encrypting",strlen("Encrypting")+1, &ctx_sess1);
+				updateLog("Encrypting",strlen("Encrypting")+1, &ctx_sess1);
 				encrypt_file(filename, &ctx_sess1, key);
 				success = 1;
 			}
@@ -43,31 +42,37 @@ int main(int argc, char *argv[])
 			pwd = argv[3];//parse password
 			key = argv[2];//parse key
 			if(password_validation(pwd, &ctx_sess1)){
-				updateLog((uint8_t *) "Decrypting",strlen("Decrypting")+1, &ctx_sess1);
+				updateLog("Decrypting",strlen("Decrypting")+1, &ctx_sess1);
 				decrypt_file(&ctx_sess1, key);
 				success = 1;
 			}
 			break;
 		case 'a':
-			pwd = argv[3];//parse password
+			pwd = argv[4];//parse password
 			uint8_t log_msg[64];
 			uint8_t log_time[32];
-			int log_index = argv[2]; // to be defined
+			int32_t lower_index = atoi(argv[2]); // to be defined
+			int32_t higher_index = atoi(argv[3]); // to be defined			
 			if(password_validation(pwd, &ctx_sess1)){
 				updateLog("Accessing log",strlen("Accessing log")+1, &ctx_sess1);
-				getLog(log_msg,64,log_time,32,log_index,&ctx_sess1); // Parameters to be defined
-				printf("Log message: %s\n",(char *) log_msg);
-				printf("Log time: %s\n", (char *) log_time);
+				for(int i=lower_index; i<=higher_index; i++){		
+					memset(log_msg, 0, sizeof(log_msg));
+					memset(log_time, 0, sizeof(log_time));			
+					getLog(log_msg,sizeof(log_msg),log_time,sizeof(log_time),i,&ctx_sess1); // Parameters to be defined
+					printf("%s - %s\n",log_msg, log_time);
+				}
 				success = 1;
 			}
 			break;
 		default:
+			updateLog("BAD ARGUMENTS",strlen("BAD ARGUMENTS")+1, &ctx_sess1);
 			fprintf(stderr,"BAD ARGUMENTS: %s called with an unrecognized instrution: %s", argv[0], argv[1]);
 			return 1;
 	}
 	
 	
 	if(!success){
+		updateLog("WRONG CREDENTIALS",strlen("WRONG CREDENTIALS")+1, &ctx_sess1);
 		fprintf(stderr, "WRONG CREDENTIALS");
 	}
 	

@@ -23,6 +23,7 @@ TEE_Result password_validation(uint32_t param_types,TEE_Param params[4])
 
 
     IMSG("validate password is being called");
+    IMSG("Password pointer: %x", pass);
     // IMSG("Parameter type is: %u", param_types);
     // IMSG("Expected parameter type is: %u", exp_param_types);
 
