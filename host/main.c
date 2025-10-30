@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 	printf("This is the TA host application, my test\n");
 
 	if (argc < 3) {		//take plain text param
-        fprintf(stderr, "BAD ARGUMENTS: %s called with %d arguments when at least 2 are required.", argv[0], argc -1);
+        fprintf(stderr, "BAD ARGUMENTS: %s called with %d arguments when at least 2 are required.\n", argv[0], argc -1);
         return 1;
     }
 	char *filename = argv[2]; //parse file name
@@ -66,14 +66,14 @@ int main(int argc, char *argv[])
 			break;
 		default:
 			updateLog("BAD ARGUMENTS",strlen("BAD ARGUMENTS")+1, &ctx_sess1);
-			fprintf(stderr,"BAD ARGUMENTS: %s called with an unrecognized instrution: %s", argv[0], argv[1]);
+			fprintf(stderr,"BAD ARGUMENTS: %s called with an unrecognized instruction: %s\n", argv[0], argv[1]);
 			return 1;
 	}
 	
 	
 	if(!success){
 		updateLog("WRONG CREDENTIALS",strlen("WRONG CREDENTIALS")+1, &ctx_sess1);
-		fprintf(stderr, "WRONG CREDENTIALS");
+		fprintf(stderr, "WRONG CREDENTIALS\n");
 	}
 	
 	// // Test 0: Retrieve secret uninitialized (information disclosure)
