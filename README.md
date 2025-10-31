@@ -40,6 +40,22 @@ To run the attacks you must use Telnet to connect. Run qemu the following way
 In a different terminal, run ```timing.py```
 
 
+### Run attact - race condition
+
+In the directory Build run the command:
+
+```make BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y run```
+
+Now lets create a share folder to have access to the all the files in the proyect:
+
+``` mkdir -p /mnt/host ```
+``` mount -t 9p -o trans=virtio host /mnt/host ```
+
+Now go to the shared folder 
+
+``` cd ../mnt/host/optee_examples/group8-TEE/test/ ```
+``` sh raceCondition.sh ```
+
 
 ## Team Members
 - Sebastián Felipe Alfonso Roa
