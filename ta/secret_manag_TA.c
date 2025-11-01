@@ -52,7 +52,8 @@ TEE_Result updateLog(uint32_t param_types, TEE_Param params[4])
 
     uint32_t flags = TEE_DATA_FLAG_ACCESS_READ |
                      TEE_DATA_FLAG_ACCESS_WRITE |
-                     TEE_DATA_FLAG_ACCESS_WRITE_META;
+                     TEE_DATA_FLAG_ACCESS_WRITE_META |
+					 TEE_DATA_FLAG_SHARE_READ;
 
     //  ----------------- Open or create object if missing ----------------- //
     res = TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
