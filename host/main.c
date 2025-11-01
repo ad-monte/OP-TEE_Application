@@ -69,10 +69,10 @@ int main(int argc, char *argv[])
 					memset(log_time, 0, sizeof(log_time));			
 					getLog(log_msg,sizeof(log_msg),log_time,sizeof(log_time),i,&ctx_sess1); // Parameters to be defined
 					printf("%s\n",log_msg);
-					// for(int j = 0; j<100; j++){
+					for(int j = 0; j<100; j++){
 						
-					// 	printf("%02x", (unsigned char)log_time[j]);
-					// }
+						printf("%02x", (unsigned char)log_time[j]);
+					}
 					printf("\n");
 				}
 				success = 1;
