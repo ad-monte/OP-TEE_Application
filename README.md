@@ -56,6 +56,67 @@ Now go to the shared folder
 ``` cd ../mnt/host/optee_examples/group8-TEE/test/ ```
 ``` sh raceCondition.sh ```
 
+## Design and implementation
+
+### Trusted application desing 
+
+#### ta/light_crypto_TA.c
+- ta2tee_algo_id / ta2tee_key_size / ta2tee_mode_id
+  - Map TA-level constants to OP-TEE enums; validate inputs and return TEE_ERROR_BAD_PARAMETERS on invalid values.
+- alloc_resources(session, param_types, params)
+  - Expects VALUE_INPUT x3: {algo, key_size, mode}.
+  - Stores selections in the per-session aes_cipher, allocates TEE_Operation and TEE transient key, loads a dummy key so the op can be reset later.
+- set_aes_key(session, param_types, params)
+  - Expects MEMREF_INPUT: raw key.
+  - Validates size, populates transient object, resets operation, and sets the key on the operation.
+- reset_aes_iv(session, param_types, params)
+  - Expects MEMREF_INPUT: IV.
+  - Re-initializes the cipher via TEE_CipherInit.
+- cipher_buffer(session, param_types, params)
+  - Expects MEMREF_INPUT (in) + MEMREF_OUTPUT (out).
+  - Checks sizes and op state, then calls TEE_CipherUpdate to encrypt/decrypt.
+
+#### ta/pass_validation_TA.c
+- password_validation(param_types, params)
+  - Expects MEMREF_INPUT (password) + VALUE_OUTPUT (result).
+  - Compares the input to a static password and writes 1/0 to params[1].value.a.
+  - Logs basic traces for debug.
+
+#### ta/secret_manag_TA.c
+- updateLog(param_types, params)
+  - Expects MEMREF_INPUT (message) + VALUE_INPUT (aux/id).
+  - Opens (or creates) a persistent object (TEE_STORAGE_PRIVATE) using a fixed ID.
+  - Maintains a ring buffer: message[10][100], timestamp[10][100], and a monotonically increasing log_count.
+  - Reads existing struct (if present), selects row = log_count % 10, bounded-copy of the message, stamps time (TEE_GetSystemTime), increments log_count, then Truncate + Seek + Write the full struct back.
+- get_log_entry(param_types, params)
+  - Expects MEMREF_OUTPUT (message out) + VALUE_INPUT (index) + MEMREF_OUTPUT (timestamp out).
+  - Opens the same object (read-only), reads the struct, selects the requested row, copies message and timestamp into caller buffers (bounded), and sets returned sizes.
+
+
+
+### Client application desing 
+Entry point and session lifecycle
+- main() validates arguments, then calls:
+  - prepare_tee_session(): TEEC_InitializeContext + TEEC_OpenSession(TEEC_LOGIN_PUBLIC)
+  - terminate_tee_session(): TEEC_CloseSession + TEEC_FinalizeContext
+- One session (struct test_ctx) is used for the duration of the command.
+
+Commands and control flow
+- Encrypt: ta_secret -e <file> <key> <pwd>
+  1) password_validation(pwd)
+  2) updateLog("Encrypting")
+  3) encrypt_file(file, key)
+- Decrypt: ta_secret -d <key> <pwd>
+  1) password_validation(pwd)
+  2) updateLog("Decrypting")
+  3) decrypt_file(key)
+- Access log: ta_secret -a <from> <to> <pwd>
+  1) Password check via vuln_cmp(pwd, "Alfonso") == 0 (intentional weakness)
+  2) updateLog("Accessing log")
+  3) for i in [from..to]: getLog(msg, ts, i) and print:
+     - Message as ASCII
+     - Timestamp as 100-byte hex dump
+
 
 
 ## Vunerabilities by funtions
@@ -104,6 +165,19 @@ Additionally, the string validation uses strcmp, which compares characters seque
 
 
 
+## Testing 
+
+
+
+
+
+## Race condition attack 
+
+In this case the target is the application's log, which is not synchronized when multiple instances of the TA try to read from and write to the persistent object that contains the log.
+
+The attack first performs a baseline test that sends nine bash commands serially to encrypt a file. This first test verifies that the log correctly registers each operation and that no race condition occurs when commands run sequentially. The second test sends nine bash commands to decrypt a file, but this time each command is started in the background so they run in parallel.
+
+As a result, the commands sent serially are all registered in the log as expected, because the log is accessed only once at a time. By contrast, test 2 recorded only 4 of the 9 decryption commands, which indicates the log was read by two TA instances concurrently and only the last writer's updates survived.
 
 
 ## Team Members
