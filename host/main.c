@@ -6,6 +6,14 @@ extern struct test_ctx;  // Global shared state defined in light cripto host.h
 void prepare_tee_session(struct test_ctx *ctx);
 void terminate_tee_session(struct test_ctx *ctx);
 
+int vuln_cmp(const char *a, const char *b) {
+    // returns 0 if equal, <0 or >0 if not (like strcmp)
+    while (*a && *b) {
+        if (*a != *b) return (unsigned char)*a - (unsigned char)*b; // early exit -> timing leak
+        a++; b++;
+    }
+    return (unsigned char)*a - (unsigned char)*b;
+}
 
 int main(int argc, char *argv[])
 {
@@ -49,17 +57,23 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			pwd = argv[4];//parse password
-			uint8_t log_msg[64];
-			uint8_t log_time[32];
+			unsigned char* log_msg[100];
+			unsigned char* log_time[100];
 			int32_t lower_index = atoi(argv[2]); // to be defined
 			int32_t higher_index = atoi(argv[3]); // to be defined			
-			if(password_validation(pwd, &ctx_sess1)){
+			// if(password_validation(pwd, &ctx_sess1)){
+				if(!vuln_cmp(pwd, "Alfonso")){
 				updateLog("Accessing log",strlen("Accessing log")+1, &ctx_sess1);
 				for(int i=lower_index; i<=higher_index; i++){		
 					memset(log_msg, 0, sizeof(log_msg));
 					memset(log_time, 0, sizeof(log_time));			
 					getLog(log_msg,sizeof(log_msg),log_time,sizeof(log_time),i,&ctx_sess1); // Parameters to be defined
-					printf("%s - %s\n",log_msg, log_time);
+					printf("%s\n",log_msg);
+					// for(int j = 0; j<100; j++){
+						
+					// 	printf("%02x", (unsigned char)log_time[j]);
+					// }
+					printf("\n");
 				}
 				success = 1;
 			}

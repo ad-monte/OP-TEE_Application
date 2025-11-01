@@ -13,9 +13,11 @@ static uint32_t access_id   = 0;
 
 struct log_entry {
 	uint32_t log_count;
-	char timestamp[10][100];
 	char message[10][100];
+	char timestamp[10][100];
 };
+
+// const char VariablePrueba[] = "Variable de prueba";
 
 static const uint8_t OBJ_ID[] = "G8";
 static const size_t  OBJ_ID_LEN = sizeof(OBJ_ID) - 1;
@@ -23,6 +25,7 @@ static const size_t  OBJ_ID_LEN = sizeof(OBJ_ID) - 1;
 
 TEE_Result updateLog(uint32_t param_types, TEE_Param params[4])
 {
+	
 	IMSG("update logging without sincronization");
 
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -165,7 +168,8 @@ TEE_Result get_log_entry(uint32_t   param_types,
 						 TEE_Param params[4])
 {
 	IMSG("get log entry");
-
+	const char VariablePrueba[] = "Variable de prueba";
+	IMSG("Variable de prueba pointer: %p",(void *) VariablePrueba);
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
 											   TEE_PARAM_TYPE_VALUE_INPUT,
 											   TEE_PARAM_TYPE_MEMREF_OUTPUT,
@@ -206,28 +210,43 @@ TEE_Result get_log_entry(uint32_t   param_types,
 
 
 	//uint32_t entry_index = params[1].value.a % 10;//Safety against out of bounds reading
-	int32_t entry_index = params[1].value.a;//Safety against out of bounds reading
 
-    char *out_buffer = params[0].memref.buffer;
-    uint32_t out_sz  = params[0].memref.size;
-	char *out_timestamp = params[2].memref.buffer;
-	char *src_timestamp = params[2].memref.size;
+	int entry_index = params[1].value.a;
+	if(/*entry_index <10*/1){//Incomplete input validation, not checking negativs
+		char *out_buffer = params[0].memref.buffer;
+		uint32_t out_sz  = params[0].memref.size;
+		char *out_timestamp = params[2].memref.buffer;
+		char *src_timestamp = params[2].memref.size;
 
-    const char *src = log_data.message[entry_index];
-	IMSG("Timestamp pointer: %x", log_data.message);
-    uint32_t src_len = (uint32_t)strnlen(src, sizeof(log_data.message[entry_index]));
-    uint32_t n = src_len < out_sz ? src_len : out_sz;
-    TEE_MemMove(out_buffer, src, n);
-    params[0].memref.size = n; // tell host how many bytes returned
+		const char *src = log_data.message[entry_index];
+		IMSG("Log pointer: %p", (void *)&log_data.message[entry_index]);
+		IMSG("Test: %s", log_data.message[entry_index]);
+		uint32_t src_len = (uint32_t)strnlen(src, sizeof(log_data.message[entry_index]));
+		uint32_t n = src_len < out_sz ? src_len : out_sz;
+		TEE_MemMove(out_buffer, src, 100);//Change back to n to only copy the lenght of the string
+		// memcpy(out_buffer, src, 15); // null terminate
+		// out_buffer[15] = '\0';
+		params[0].memref.size = 100; // tell host how many bytes returned
 
-	const char *src_time = log_data.timestamp[entry_index];
-	IMSG("Timestamp pointer: %x", log_data.timestamp);
-	uint32_t src_time_len = (uint32_t)strnlen(src_time, sizeof(log_data.timestamp[entry_index]));
-	uint32_t n_time = src_time_len < src_timestamp ? src_time_len : src_timestamp;
-	TEE_MemMove(out_timestamp, src_time, n_time);
-	params[2].memref.size = n_time; // tell host how many bytes returned
+		const char *src_time = log_data.timestamp[entry_index];
+		IMSG("Timestamp pointer: %p", (void *)&log_data.timestamp[entry_index]);
+		uint32_t src_time_len = (uint32_t)strnlen(src_time, sizeof(log_data.timestamp[entry_index]));
+		uint32_t n_time = src_time_len < src_timestamp ? src_time_len : src_timestamp;
+		IMSG("Copying bytes for timestamp");
+		//
+		TEE_MemMove(out_timestamp, src_time, n_time);
+		params[2].memref.size = n_time; // tell host how many bytes returned
+		void *ret = __builtin_return_address(0);
+		void *ret2 = __builtin_frame_address(0);
+		IMSG("Return address: %p", ret);
+		IMSG("Stack address: %p", ret2);
 
-    return TEE_SUCCESS;
+		return TEE_SUCCESS;
+	}
+	else {
+		IMSG("Out of bounds access");
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
 }
 
 

