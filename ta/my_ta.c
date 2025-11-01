@@ -25,7 +25,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void __maybe_unused *sess_ctx,
 
 	IMSG("TA_InvokeCommandEntryPoint has been called with cmd_id=0x%" PRIx32, cmd_id);
 	// We could have a command ID for each type of vulneravility.
-
+	
 	switch (cmd_id)
 	{
 	case CMD_SECRET_MANAGMENT_STR:
