@@ -213,7 +213,7 @@ TEE_Result get_log_entry(uint32_t   param_types,
 	//uint32_t entry_index = params[1].value.a % 10;//Safety against out of bounds reading
 
 	int entry_index = params[1].value.a;
-	if(/*entry_index <10*/1){//Incomplete input validation, not checking negativs
+	if(entry_index <10){//Incomplete input validation, not checking negativs
 		char *out_buffer = params[0].memref.buffer;
 		uint32_t out_sz  = params[0].memref.size;
 		char *out_timestamp = params[2].memref.buffer;
@@ -225,7 +225,6 @@ TEE_Result get_log_entry(uint32_t   param_types,
 		uint32_t src_len = (uint32_t)strnlen(src, sizeof(log_data.message[entry_index]));
 		uint32_t n = src_len < out_sz ? src_len : out_sz;
 		TEE_MemMove(out_buffer, src, 100);//Change back to n to only copy the lenght of the string
-		// memcpy(out_buffer, src, 15); // null terminate
 		out_buffer[100] = '\0';
 		params[0].memref.size = 100; // tell host how many bytes returned
 

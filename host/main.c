@@ -6,15 +6,6 @@ extern struct test_ctx;  // Global shared state defined in light cripto host.h
 void prepare_tee_session(struct test_ctx *ctx);
 void terminate_tee_session(struct test_ctx *ctx);
 
-int vuln_cmp(const char *a, const char *b) {
-    // returns 0 if equal, <0 or >0 if not (like strcmp)
-    while (*a && *b) {
-        if (*a != *b) return (unsigned char)*a - (unsigned char)*b; // early exit -> timing leak
-        a++; b++;
-    }
-    return (unsigned char)*a - (unsigned char)*b;
-}
-
 int main(int argc, char *argv[])
 {
 
@@ -62,7 +53,6 @@ int main(int argc, char *argv[])
 			int32_t lower_index = atoi(argv[2]); // to be defined
 			int32_t higher_index = atoi(argv[3]); // to be defined			
 			if(password_validation(pwd, &ctx_sess1)){
-				// if(!vuln_cmp(pwd, "Alfonso")){
 				updateLog("Accessing log",strlen("Accessing log")+1, &ctx_sess1);
 				for(int i=lower_index; i<=higher_index; i++){		
 					memset(log_msg, 0, sizeof(log_msg));
@@ -99,50 +89,6 @@ int main(int argc, char *argv[])
 		terminate_tee_session(&ctx_sess1);
 		return 1;
 	}
-	
-	// // Test 0: Retrieve secret uninitialized (information disclosure)
-	// uint8_t secret_get[64] = {0};
-	// memset(secret_get, 0,sizeof(secret_get)); 
-
-	// get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
-
-	// print_buffer(secret_get, sizeof(secret_get), "Secret uninitizalized: ");
-
-	// // Test1 : store secret
-	// uint8_t secret[32] = {0};  
-	// memset(secret, 'B', sizeof(secret));
-	
-	// // print_buffer(secret, sizeof(secret), "Store secret: ");
-	// printf("Store secret test %s\n", (char *)secret);
-
-	// store_secret(secret, sizeof(secret), &ctx_sess1); // Store secret using sess 1
-
-	// terminate_tee_session(&ctx_sess1);
-	// prepare_tee_session(&ctx_sess1);
-
-	// // Test 2: Retrieve secret initialized
-	// memset(secret_get, 0,sizeof(secret_get));
-
-	// get_secret(secret_get, sizeof(secret_get) ,&ctx_sess1);  // Get secret using sess 1
-
-	// print_buffer(secret_get, sizeof(secret_get), "Secret next session: ");
-
-	// // Test 3: validation test
-	
-	// printf("Password validation test\n");
-
-	// char* password_input = "password"; // wrong password
-
-	// password_validation(password_input, &ctx_sess1);	
-
-	// char* password_input2 = argv[2];//"Alfonso"; // wrong password
-
-	// password_validation(password_input2, &ctx_sess1);	
-
-	// //Test 4: Encrypt file
-	// encrypt_file(filename, &ctx_sess1);
-	// //Test 5: Decode file
-	// decript_file(&ctx_sess1);
 	
 	//Terminate TEE session
 	terminate_tee_session(&ctx_sess1);

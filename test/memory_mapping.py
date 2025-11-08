@@ -6,9 +6,8 @@ import statistics
 import subprocess
 
 TA_APP = "ta_secret -a "  # Command to test the token
-TA_INDEX = ""
 TA_PWD = " Alfonso"
-output_file = "/mnt/host/optee_examples/project/test/memory.txt"
+output_file = "/mnt/host/optee_examples/project/test/memory.txt" #Change the name of the folder according to your project name
 
 # Global child process
 child = None
