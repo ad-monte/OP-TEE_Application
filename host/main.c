@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
 	char *pwd;
 	int success = 0;
 	prepare_tee_session(&ctx_sess1);
-	
+	TEEC_Result res;
 	switch (instruction[1]) {
 		case 'e':
 			pwd = argv[4];//parse password
@@ -57,23 +57,30 @@ int main(int argc, char *argv[])
 			break;
 		case 'a':
 			pwd = argv[4];//parse password
-			unsigned char* log_msg[100];
-			unsigned char* log_time[100];
+			char log_msg[100];
+			char log_time[100];
 			int32_t lower_index = atoi(argv[2]); // to be defined
 			int32_t higher_index = atoi(argv[3]); // to be defined			
-			// if(password_validation(pwd, &ctx_sess1)){
-				if(!vuln_cmp(pwd, "Alfonso")){
+			if(password_validation(pwd, &ctx_sess1)){
+				// if(!vuln_cmp(pwd, "Alfonso")){
 				updateLog("Accessing log",strlen("Accessing log")+1, &ctx_sess1);
 				for(int i=lower_index; i<=higher_index; i++){		
 					memset(log_msg, 0, sizeof(log_msg));
 					memset(log_time, 0, sizeof(log_time));			
-					getLog(log_msg,sizeof(log_msg),log_time,sizeof(log_time),i,&ctx_sess1); // Parameters to be defined
-					printf("%s\n",log_msg);
-					for(int j = 0; j<100; j++){
-						
-						printf("%02x", (unsigned char)log_time[j]);
+					res=getLog(log_msg,sizeof(log_msg),log_time,sizeof(log_time),i,&ctx_sess1); // Parameters to be defined
+					print_buffer("Log entry: ", sizeof("Log entry: "));
+					print_buffer(log_msg, sizeof(log_msg));
+					print_buffer(" - ", sizeof(" - "));
+					print_buffer(log_time, sizeof(log_time));
+					print_buffer("\n", sizeof("\n"));
+					printf("%d - %d\n",res,TEEC_SUCCESS);
+
+					if (res != TEEC_SUCCESS){
+						printf("Not success");
+						fprintf(stderr, "Error getting log entry %d, code 0x%x\n", i, res);
+						terminate_tee_session(&ctx_sess1);
+						return 1;
 					}
-					printf("\n");
 				}
 				success = 1;
 			}
@@ -81,6 +88,7 @@ int main(int argc, char *argv[])
 		default:
 			updateLog("BAD ARGUMENTS",strlen("BAD ARGUMENTS")+1, &ctx_sess1);
 			fprintf(stderr,"BAD ARGUMENTS: %s called with an unrecognized instruction: %s\n", argv[0], argv[1]);
+			terminate_tee_session(&ctx_sess1);
 			return 1;
 	}
 	
@@ -88,6 +96,8 @@ int main(int argc, char *argv[])
 	if(!success){
 		updateLog("WRONG CREDENTIALS",strlen("WRONG CREDENTIALS")+1, &ctx_sess1);
 		fprintf(stderr, "WRONG CREDENTIALS\n");
+		terminate_tee_session(&ctx_sess1);
+		return 1;
 	}
 	
 	// // Test 0: Retrieve secret uninitialized (information disclosure)

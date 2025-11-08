@@ -170,6 +170,7 @@ TEE_Result get_log_entry(uint32_t   param_types,
 	IMSG("get log entry");
 	const char VariablePrueba[] = "Variable de prueba";
 	IMSG("Variable de prueba pointer: %p",(void *) VariablePrueba);
+	IMSG("Variable de prueba pointer: %s",VariablePrueba);
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
 											   TEE_PARAM_TYPE_VALUE_INPUT,
 											   TEE_PARAM_TYPE_MEMREF_OUTPUT,
@@ -225,11 +226,10 @@ TEE_Result get_log_entry(uint32_t   param_types,
 		uint32_t n = src_len < out_sz ? src_len : out_sz;
 		TEE_MemMove(out_buffer, src, 100);//Change back to n to only copy the lenght of the string
 		// memcpy(out_buffer, src, 15); // null terminate
-		// out_buffer[15] = '\0';
+		out_buffer[100] = '\0';
 		params[0].memref.size = 100; // tell host how many bytes returned
 
 		const char *src_time = log_data.timestamp[entry_index];
-		IMSG("Timestamp pointer: %p", (void *)&log_data.timestamp[entry_index]);
 		uint32_t src_time_len = (uint32_t)strnlen(src_time, sizeof(log_data.timestamp[entry_index]));
 		uint32_t n_time = src_time_len < src_timestamp ? src_time_len : src_timestamp;
 		IMSG("Copying bytes for timestamp");

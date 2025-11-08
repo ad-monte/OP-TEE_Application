@@ -20,7 +20,7 @@ void updateLog(uint8_t* log_msg, uint32_t size, struct test_ctx *ctx_sess){
 
 }
 
-void getLog( uint8_t* log_msg, uint32_t size, uint8_t* log_time, uint32_t size_time, int32_t indexLog, struct test_ctx *ctx_sess){
+TEEC_Result getLog( uint8_t* log_msg, uint32_t size, uint8_t* log_time, uint32_t size_time, int32_t indexLog, struct test_ctx *ctx_sess){
 
 	TEEC_Operation op;
 	TEEC_Result res;
@@ -39,6 +39,7 @@ void getLog( uint8_t* log_msg, uint32_t size, uint8_t* log_time, uint32_t size_t
 	op.params[2].tmpref.size = size_time;
 
 	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_GET_LOG, &op, &err_origin);
+	return res;
 
 }
 
@@ -80,10 +81,8 @@ void store_secret(uint8_t* secret, uint32_t size, struct test_ctx *ctx_sess){
 	res = TEEC_InvokeCommand(&ctx_sess->sess, CMD_SECRET_MANAGMENT_STR, &op, &err_origin);
 }
 
-void print_buffer(uint8_t* buffer, uint32_t size, const char* msg){
-	printf("%s",msg);
+void print_buffer(char* buffer, uint32_t size){
 	for(int i=0; i < size; i++){
 		printf("%c",buffer[i]);
 	}
-	printf("\n");
 }

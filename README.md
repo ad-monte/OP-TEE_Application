@@ -37,7 +37,7 @@ To run the attacks you must use Telnet to connect. Run qemu the following way
 
 ```make run-only QEMU_EXTRA_ARGS="-serial tcp:127.0.0.1:5555,server,nowait" ```
 
-In a different terminal, run ```timing.py```
+In a different terminal, run ```python timing.py``` or ```python3 timing.py``` depending on your python instllation.
 
 
 ### Run attact - race condition
