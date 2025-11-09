@@ -66,7 +66,6 @@ int main(int argc, char *argv[])
 					printf("%d - %d\n",res,TEEC_SUCCESS);
 
 					if (res != TEEC_SUCCESS){
-						printf("Not success");
 						fprintf(stderr, "Error getting log entry %d, code 0x%x\n", i, res);
 						terminate_tee_session(&ctx_sess1);
 						return 1;

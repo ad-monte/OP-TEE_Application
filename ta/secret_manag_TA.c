@@ -240,7 +240,7 @@ TEE_Result get_log_entry(uint32_t   param_types,
 		void *ret2 = __builtin_frame_address(0);
 		IMSG("Return address: %p", ret);
 		IMSG("Stack address: %p", ret2);
-
+		
 		return TEE_SUCCESS;
 	}
 	else {
