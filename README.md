@@ -4,7 +4,7 @@
 
 ta_secret is an application that implements AES encription, a hard coded password validator and an access log.
 
-The app has 3 main functions
+The application has 3 main functions:
 
 1. Encrypt a plain text file ```ta_secret -e <plain text file> <key> <pwd>```  
 2. Decrypt a plain text file ```ta_secret -d <key> <pwd>```
@@ -51,16 +51,16 @@ The first flag is to install python in the normal world, so we can run the pytho
 We also access the file optee-qemu/optee-os/mk/config.mk and modify ``CFG_TA_ASLR ?= n`` to ``y``.
 
 In case there are some conflicts with rust examples it is also possible to add the following:
-``export BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n``
-
-Optionally, it is always possible to run the code with placing all the flags when calling make:
-
-```make BR2_PACKAGE_PYTHON3=y QEMU_VIRTFS_AUTOMOUNT=y QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n run```
+``EXPORT BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n``
 
 
 In the directory Build run the command:
 
 ```make run```
+
+Optionally, it is always possible to run the code by placing all the flags when calling make:
+
+```make BR2_PACKAGE_PYTHON3=y QEMU_VIRTFS_AUTOMOUNT=y QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n run```
 
 Now lets create a share folder to have access to the all the files in the proyect:
 
