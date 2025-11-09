@@ -34,6 +34,26 @@ TEE_Result password_validation(uint32_t param_types,TEE_Param params[4])
     IMSG("Length received is: %u", (length));
     
     const char *pass_str = (const char *)pass;
+    size_t pass_len = strlen(pass_str);
+
+    validated = 0;
+
+    //This a vulnerable validator that check character by character and includes a delay to make timing more evident just as an excercise
+    /*if (input_str != NULL && (length == pass_len || length == pass_len + 1)) {
+        // compare character by character 
+        validated = 1;
+        for (size_t i = 0; i < pass_len; i++) {
+            if (input_str[i] != pass_str[i]) {
+                validated = 0;
+                break;
+            }
+            else{ float p = 2; for (float a=0;a<7000000;a++){ //forced delay to make the timing more evident
+                           p+=1.1;
+            } }
+        }
+    } else {
+        validated = 0;
+    }*/
 
     validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;//Seems vulnerable to timing attacks
     IMSG("Password validation result: %d\n", validated);
