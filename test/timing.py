@@ -20,18 +20,19 @@ child = None
 def try_to_hack(characters):
     
     global child
+    args = [TA_APP] + TA_COMMAND.split() + [characters]
+    print(f"{' '.join(args)}\n")
+
     timings = []
-    subprocess.call([TA_APP, TA_COMMAND, characters])
-    print(f"{TA_APP} {TA_COMMAND} {characters}\n")
+    #first run because first run takes a little longer for some reason
+    subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    for _ in range(N):           
-                        
-            start = time.time()
-            subprocess.call([TA_APP, TA_COMMAND, characters])
-            end = time.time()
-            timings.append(end - start)
+    for _ in range(N):
+        start = time.perf_counter()
+        subprocess.run(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        end = time.perf_counter()
+        timings.append(end - start)
 
-    
     return timings
 
 def find_next_character(base):

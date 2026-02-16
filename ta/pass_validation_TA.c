@@ -1,8 +1,11 @@
 #include <pass_validation_TA.h>
 #include <string.h>  
 #include <my_ta.h>
+#include <stdint.h>
 
 static char pass[] = "Alfonso";
+
+
 
 TEE_Result password_validation(uint32_t param_types,TEE_Param params[4])
 {
@@ -39,7 +42,7 @@ TEE_Result password_validation(uint32_t param_types,TEE_Param params[4])
     validated = 0;
 
     //This a vulnerable validator that check character by character and includes a delay to make timing more evident just as an excercise
-    /*if (input_str != NULL && (length == pass_len || length == pass_len + 1)) {
+    if (input_str != NULL && (length == pass_len || length == pass_len + 1)) {
         // compare character by character 
         validated = 1;
         for (size_t i = 0; i < pass_len; i++) {
@@ -47,16 +50,20 @@ TEE_Result password_validation(uint32_t param_types,TEE_Param params[4])
                 validated = 0;
                 break;
             }
-            else{ float p = 2; for (float a=0;a<7000000;a++){ //forced delay to make the timing more evident
-                           p+=1.1;
-            } }
+                else {
+                    /*float p = 2; for (float a=0;a<7000000;a++){ //forced delay to make the timing more evident
+                           p+=1.1;}*/
+                    // introduce ~1 ms delay per correctly matched character
+                    // Using TEE_Wait which takes milliseconds as parameter
+                    TEE_Wait(200); // in millisecond
+                }
         }
     } else {
         validated = 0;
-    }*/
+    }
 
-    validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;//Seems vulnerable to timing attacks
-    IMSG("Password validation result: %d\n", validated);
+    // validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0;//Seems vulnerable to timing attacks
+    // IMSG("Password validation result: %d\n", validated);
 
     params[1].value.a = validated; // set output param
 
