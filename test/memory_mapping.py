@@ -36,7 +36,7 @@ def map_memory():
                     with open(output_file, "a") as f:
                         f.write(f"Index: {index}; {TA_APP} {index} {index}\n")
                         f.write(char_output)
-                        f.write(hex_output)
+                        # f.write(hex_output)
             result.wait()
             stdout_data, stderr_data = result.communicate()
             index -= 1
