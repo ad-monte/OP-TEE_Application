@@ -211,7 +211,7 @@ As a result, the commands sent serially are all registered in the log as expecte
 
 ### Timing Attack
 
-This attack is based on Lab 3 done during class. It is mainly a didactic implementation since we start by a known token size. The script measures the time taken while validating each character on a string which is done in the Trusted Aplication using strcmp. It takes an N number of measurements for each character tested (hardcoded as 3) and then takes the best option for each character constructing a password. Finally the guessed password is tested. This attack was not effective since the OP-TEE was achieving uniform timing. We tried to forcefully include a delay on a comparator function but the results remained the same.
+This attack is based on Lab 3 done during class. It is mainly a didactic implementation since we start by a known token size. The script measures the time taken while validating each character on a string which was done in the Trusted Aplication using strcmp. It takes an N number of measurements for each character tested (hardcoded as 3) and then takes the best option for each character constructing a password. Finally the guessed password is tested. This attack was not effective since the OP-TEE was achieving uniform timing. We had to forcefully include a delay in the comparator function to have a considerable value to measure in runtime. Only after this, the attack was succesful.
 
 ### Memory Mapping 
 
