@@ -215,7 +215,22 @@ This attack is based on Lab 3 done during class. It is mainly a didactic impleme
 
 ### Memory Mapping 
 
+This attack exploits the lack of input validation when the command ta_secret -a is executed. Specifically, the map_memory function decrements the index, allowing access to data outside the bounds of the log buffer.
+
+After extracting the memory content, the data is processed line by line and converted into a character representation. This makes it possible to read the leaked information. When valid data is identified, it is written to a file and displayed on the command line, thereby exposing confidential information.
+
+As a result, it was possible to access internal comments and project-related information, as shown in the attached image.
+
 ### Fuzzing Attack
+This attack explores the different inputs accepted by the application. The interface interacting with the Trusted Application (TA) is the ta_secret program. Since there are restrictions on how the Trusted Application can be used, the attack systematically tests each functionality of the TA and searches for inputs that may disrupt the normal program flow.
+
+This includes:
+
+1) Sending fewer or more parameters than expected
+2) Using special characters in the password and encryption key
+3) Testing negative indices when accessing logs
+4) Providing extremely large numerical values
+5) The goal is to identify improper input handling that could lead to unexpected behavior or security vulnerabilities.
 
 
 
