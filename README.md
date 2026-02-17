@@ -62,7 +62,7 @@ Optionally, it is always possible to run the code by placing all the flags when 
 
 ```make BR2_PACKAGE_PYTHON3=y QEMU_VIRTFS_AUTOMOUNT=y QEMU_VIRTFS_ENABLE=y QEMU_USERNET_ENABLE=y BR2_PACKAGE_OPTEE_RUST_EXAMPLES_EXT=n run```
 
-Now lets create a share folder to have access to the all the files in the proyect:
+Now lets create a share folder to have access to the all the files in the project:
 
 ``` mkdir -p /mnt/host ```
 ``` mount -t 9p -o trans=virtio host /mnt/host ```
@@ -124,7 +124,7 @@ This file implements secret management funciontalities: the function that create
 
 
 
-### Client application desing 
+### Client application design 
 The client application uses the TA commands to perform cryptographic operations and log access. It is implemented as:
 
 - main() validates arguments minimum count of arguments, then calls:
@@ -155,7 +155,7 @@ Commands and control flow per instruction:
 
 
 
-## Vunerabilities by funtions
+## Vunerabilities by functions 
 
 ### TEE_Result updateLog()
 
@@ -199,8 +199,9 @@ Additionally, the string validation uses strcmp, which compares characters seque
 
 ```validated = (strcmp((const char*)input_str, pass_str)==0) ? 1 : 0; ```
 
+## Testing 
 
-## Race condition attack 
+### Race Condition Attack 
 
 In this case the target is the application's log, which is not synchronized when multiple instances of the TA try to read from and write to the persistent object that contains the log.
 
@@ -208,9 +209,30 @@ The attack first performs a baseline test that sends nine bash commands serially
 
 As a result, the commands sent serially are all registered in the log as expected, because the log is accessed only once at a time. By contrast, test 2 recorded only 4 of the 9 decryption commands, which indicates the log was read by two TA instances concurrently and only the last writer's updates survived.
 
-## Timing attack
+### Timing Attack
 
-This attack is based on Lab 3 done during class. It is mainly a didactic implementation since we start by a known token size. The script measures the time taken to while validating each character on a string which is done in the Trusted Aplication using strcmp. It takes an N number of measurements for each character tested (hardcoded as 3) and then takes the best option for each character constructing a password. Finally the guessed password is tested. This attack was not effective since the OP-TEE was achieving uniform timing. We tried to forcefully include a delay on a comparator function but the results remained the same.
+This attack is based on Lab 3 done during class. It is mainly a didactic implementation since we start by a known token size. The script measures the time taken while validating each character on a string which was done in the Trusted Aplication using strcmp. It takes an N number of measurements for each character tested (hardcoded as 3) and then takes the best option for each character constructing a password. Finally the guessed password is tested. This attack was not effective since the OP-TEE was achieving uniform timing. We had to forcefully include a delay in the comparator function to have a considerable value to measure in runtime. Only after this, the attack was succesful.
+
+### Memory Mapping 
+
+This attack exploits the lack of input validation when the command ta_secret -a is executed. Specifically, the map_memory function decrements the index, allowing access to data outside the bounds of the log buffer.
+
+After extracting the memory content, the data is processed line by line and converted into a character representation. This makes it possible to read the leaked information. When valid data is identified, it is written to a file and displayed on the command line, thereby exposing confidential information.
+
+As a result, it was possible to access internal comments and project-related information, as shown in the attached image.
+
+### Fuzzing Attack
+This attack explores the different inputs accepted by the application. The interface interacting with the Trusted Application (TA) is the ta_secret program. Since there are restrictions on how the Trusted Application can be used, the attack systematically tests each functionality of the TA and searches for inputs that may disrupt the normal program flow.
+
+This includes:
+
+1) Sending fewer or more parameters than expected
+2) Using special characters in the password and encryption key
+3) Testing negative indices when accessing logs
+4) Providing extremely large numerical values
+5) The goal is to identify improper input handling that could lead to unexpected behavior or security vulnerabilities.
+
+
 
 ## Memory mapping attack
 
