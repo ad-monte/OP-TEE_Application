@@ -19,11 +19,12 @@ class End(Exception):
 
 def map_memory():
     index = 0
+    counter = 0
     while True:
         try:
             print(f"Trying index: {index}")
             result = subprocess.Popen(
-                                        TA_APP + f"{index} {index}" + TA_PWD,
+                                        TA_APP + f"{(index-1)*100+1} {index*100}" + TA_PWD,
                                         shell=True,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE
@@ -34,9 +35,10 @@ def map_memory():
                 char_output = ''.join(f'{byte:c}' for byte in line[0]) + "\n"
                 if len(line) == 2:
                     with open(output_file, "a") as f:
-                        f.write(f"Index: {index}; {TA_APP} {index} {index}\n")
+                        f.write(f"Index: {counter}\n")
                         f.write(char_output)
                         # f.write(hex_output)
+                        counter += 1
             result.wait()
             stdout_data, stderr_data = result.communicate()
             index -= 1
