@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "type_traits": "c",
+        "string.h": "c",
+        "my_ta.h": "c",
+        "light_crypto_ta.h": "c",
+        "secret_manag_ta.h": "c",
+        "secret.h": "c",
+        "main_header.h": "c",
+        "light_crypto_host.h": "c"
+    }
+}
